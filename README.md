@@ -76,7 +76,7 @@ I would propose that we first build the interface, test it and then think of a w
 ## Simple Thank You Game
 
 The game praises you for your good nature. Parallel shows beautiful pictures and offers the possibility to earn badges, which can be posted on social media.
-It explains in detail what the data is used for and how it benefits research and society.
+It explains in detail what the data is used for and how it benefits science and society.
 
 This would do the trick for the beginning.
 
