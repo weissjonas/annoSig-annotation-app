@@ -21,7 +21,5 @@ class SwipeApp(App):
         return LayoutWidget()
 
 
-
-
 if __name__=="__main__":
     SwipeApp().run()
