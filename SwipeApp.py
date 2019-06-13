@@ -11,8 +11,14 @@ from kivy.uix.carousel import Carousel
 from kivy.uix.button import Button
 
 
+class LayoutWidget(BoxLayout):
+    def __init__(self, **kwargs):
+        super(LayoutWidget, self).__init__(**kwargs)
+
+
 class SwipeApp(App):
-    pass
+    def build(self):
+        return LayoutWidget()
 
 if __name__=="__main__":
     SwipeApp().run()
