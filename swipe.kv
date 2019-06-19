@@ -1,7 +1,21 @@
 
 <LayoutWidget>:
+    id: layoutwidget
     orientation: 'vertical'
-    ScatterLayout:
-        Label:
-            text: 'This is my label'
-            font_size: 100
+    BoxLayout:
+        id: boxlayout
+        orientation: 'vertical'
+        CustImage:
+            id: image
+            source: ''
+            on_press: root.replace_image(widget=self)
+
+
+
+
+
+
+
+
+
+
