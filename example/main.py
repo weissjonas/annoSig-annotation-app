@@ -1,10 +1,10 @@
 from kivy.app import App
-from kivy.lang import Builder
-from kivy.uix.label import Label
 from kivy.uix.image import Image
 from kivy.uix.button import Button
-from kivy.properties import ObjectProperty
 from kivy.uix.gridlayout import GridLayout
+from kivy.uix.label import Label
+from kivy.uix.boxlayout import BoxLayout
+from kivy.core.window import Window
 from functools import partial
 
 from os import listdir
@@ -29,11 +29,10 @@ and it is not an easy task for you.
 I'm totaly aware of this, but I'm convinced that you will benefit from it.  
 '''
 
-class Container(GridLayout):
+class Container(BoxLayout):
 	def __init__(self):
 		# call the __init__ of the parent class once
-		GridLayout.__init__(self, cols=2)
-
+		BoxLayout.__init__(self, orientation='horizontal')
 
 		# search for files in \images and append them to a list
 		# From this list there are pulled
@@ -49,24 +48,33 @@ class Container(GridLayout):
 
 		# Add some nice buttons, with partial
 		# functools are a great lib in python, if you do not know it
-		# I would higly recomend to read the docs
+		# I would highly recommend to read the docs
 		# https://python.readthedocs.io/en/latest/library/functools.html
-		self.A  = Button(text='A')	
-		self.A.bind(on_press=partial(self.change_image,score='A'))
+		self.left_label = Label(text='bad', size_hint=(0.05,1))
+		self.right_label = Label(text='good', size_hint=(0.05,1))
 
-		self.B  = Button(text='B')
-		self.B.bind(on_press=partial(self.change_image,score='B'))
-
-
-		# Display everything
-		self.add_widget(self.A)
-		self.add_widget(self.B)
+		#self.add_widget(self.A)
+		self.add_widget(self.left_label)
 		self.add_widget(self.display)
+		self.add_widget(self.right_label)
+
+		# Run keyboard function on key press
+		Window.bind(on_key_down=self.on_keyboard_down)
 
 
-	def change_image(self,instance,score=None):
+	# Pass the value of the key pressed to the change_image function
+	def on_keyboard_down(self, instance, keyboard, keycode, text, modifiers):
+		if keycode == 80:
+			self.change_image(score='Bad')
+
+		elif keycode == 79:
+			self.change_image(score='Good')
+
+
+	# Record keystroke value in csv file and move to next image
+	def change_image(self,score=None):
 		'''
-		Change the displayed image and write the fielname and score to score.csv
+		Change the displayed image and write the filename and score to score.csv
 		'''
 		with open('score.csv', mode='a') as score_data:
 			writer = csv.writer(score_data)
@@ -74,6 +82,7 @@ class Container(GridLayout):
 
 		self.current = self.pictures.pop(0)
 		self.display.source = self.current
+		return None
 
 
 class ScorePicturesApp(App):
