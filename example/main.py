@@ -42,6 +42,15 @@ class Container(BoxLayout):
 		for filename in glob(join(curdir, 'images', '*')):
 			self.pictures.append(filename)
 
+		with open('score.csv', mode='r') as score_data:
+			reader = csv.reader(score_data)
+			for row in reader:
+				if row[0] in self.pictures:
+					self.pictures.remove(row[0])
+
+		# last picture:
+		# images/22282612190554353704331305300604260300
+
 		# The first image is updated with the first element in the list
 		self.current = self.pictures.pop(0)
 		self.display = Image(source=self.current)
@@ -70,6 +79,10 @@ class Container(BoxLayout):
 		elif keycode == 79:
 			self.change_image(score='Good')
 
+		elif keycode == 82:
+			self.change_image(score='Unclear')
+		
+
 
 	# Record keystroke value in csv file and move to next image
 	def change_image(self,score=None):
@@ -87,7 +100,7 @@ class Container(BoxLayout):
 
 class ScorePicturesApp(App):
 	def build(self):
-		self.title = 'Awesome app!!!'
+		self.title = 'anno5i9 v0.1'
 		return Container()
 
 
