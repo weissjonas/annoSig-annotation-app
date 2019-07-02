@@ -1,3 +1,5 @@
+
+
 from kivy.app import App
 from kivy.uix.image import Image
 from kivy.uix.button import Button
@@ -89,7 +91,7 @@ class Container(BoxLayout):
 		'''
 		Change the displayed image and write the filename and score to score.csv
 		'''
-		with open('score.csv', mode='a') as score_data:
+		with open('score.csv', mode='a', newline='') as score_data:
 			writer = csv.writer(score_data)
 			writer.writerow([self.current, score])
 
