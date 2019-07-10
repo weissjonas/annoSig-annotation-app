@@ -8,9 +8,10 @@ from kivy.uix.behaviors import DragBehavior
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.anchorlayout import AnchorLayout
 from kivy.core.window import Window
 from kivy.uix.screenmanager import Screen, ScreenManager
-from kivy.properties import ObjectProperty
+from kivy.uix.progressbar import ProgressBar
 from functools import partial
 
 
@@ -65,21 +66,40 @@ class Container(BoxLayout):
 		for filename in glob(join(curdir, 'images', '*')):
 			self.pictures.append(filename)
 
+
 		with open('score.csv', mode='r') as score_data:
 			reader = csv.reader(score_data)
 			for row in reader:
 				if row[0] in self.pictures:
 					self.pictures.remove(row[0])
 
+
+		# Get total number of pictures to gauge progress
+		self.prog_max = len([filename for filename in glob(join(curdir, 'images', '*'))])
+
 		# The first image is updated with the first element in the list
 		self.current = self.pictures.pop(0)
-		self.display = DragImage(source=self.current,
-								 drag_rect_width=Window.width,
-								 drag_rect_height=Window.height)
 
+		# Create draggable image widget
+		self.display = DragImage(
+			source=self.current,
+			drag_rect_width=Window.width,
+			drag_rect_height=Window.height)
+		# Create progress bar widget
+		self.pb = ProgressBar(
+			size_hint=(0.9,0.1),
+			max=self.prog_max)
+		# Use anchor layout to keep progress bar centered
+		self.anchor = AnchorLayout(
+			anchor_x='center',
+			anchor_y='center',
+			size_hint=(1, 0.1))
+		# Set initial progress
+		self.pb.value = self.prog_max - len(self.pictures) - 1
+		# Add picture and progress bar
 		self.add_widget(self.display)
-
-
+		self.anchor.add_widget(self.pb)
+		self.add_widget(self.anchor)
 
 	#Record initial down click coordinates
 	def on_touch_down(self, touch):
@@ -102,16 +122,16 @@ class Container(BoxLayout):
 		min_dist, dist, dx, dy = calculate_dist(*self.coord)
 		self.score_val = touch.y/Window.height
 
-		#Check if drag movement is big enough
-		if dist > min_dist and dx > 0:
-			#Assign score based on drag direction
+		# Check if drag movement is big enough
+		if dist > min_dist and dx > Window.width/5:
+			# Assign score based on drag direction
 			self.change_image(score=self.score_val)
-		#Recenter display picture if drag magnitude is too small
+		# Recenter display picture if drag magnitude is too small
 		else:
 			self.display.center = Window.center
 
 
-	# Record keystroke value in csv file and move to next image
+	# Record drag value in csv file and move to next image
 	def change_image(self,score=None):
 		'''
 		Change the displayed image and write the filename and score to score.csv
@@ -119,10 +139,12 @@ class Container(BoxLayout):
 		with open('score.csv', mode='a', newline='') as score_data:
 			writer = csv.writer(score_data)
 			writer.writerow([self.current, score])
-
+		# Update picture to new
 		self.current = self.pictures.pop(0)
 		self.display.source = self.current
 		self.display.center = Window.center
+		# Update progress bar
+		self.pb.value = self.prog_max - len(self.pictures) - 1
 		return None
 
 
@@ -141,74 +163,101 @@ class ScreenManage(ScreenManager):
 # Create Menu Screen
 class MenuScreen(Screen):
 	def __init__(self):
-		Screen.__init__(self, name="menu")
+		Screen.__init__(self, name='menu')
 
-		# Create Grid Layout for the buttons
-		self.layout = GridLayout(cols=1, rows=6, padding=20, spacing=30)
+		# Change Window Background color
+		Window.clearcolor = (1, 1, 1, 1)
+		# Create Box Layout for the screen
+		self.box_layout = BoxLayout(orientation='vertical', padding=(0,0))
+		# Create Grid Layout for the buttons and title/image
+		self.grid_layout_title = GridLayout(cols=1, padding=(200, 20))
+		self.grid_layout_buttons = GridLayout(cols=1, padding=(300, 20), size_hint=(1, 0.4))
+		# Navigation buttons
+		self.start_button = Button(
+			text='Start Annotations',
+			background_normal='background.png',
+			background_down='pressed.png')
 
-		# Button to go to annotations
-		self.start_button = Button(text="Start Annotations")
-
-		# Button to go to instructions
-		self.instruct_button = Button(text="Instructions")
+		self.instruct_button = Button(
+			text='Instructions',
+			background_normal='background.png',
+			background_down='pressed.png')
 		self.start_button.bind(on_press=self.anno_screen)
 		self.instruct_button.bind(on_press=self.inst_screen)
+		# Menu image
+		self.pic = Image(source='cover.png', keep_ratio='False')
+		# Game Title
+		self.title = Label(
+			text="Fetal ECG Annotation Game",
+			color=(0,0,128,1),
+			size_hint_y=0.4)
 
 		# Add widgets to grid layout
-		self.layout.add_widget(self.instruct_button)
-		self.layout.add_widget(self.start_button)
+		self.grid_layout_buttons.add_widget(self.instruct_button)
+		self.grid_layout_buttons.add_widget(self.start_button)
+		self.grid_layout_title.add_widget(self.title)
+		self.grid_layout_title.add_widget(self.pic)
+		self.box_layout.add_widget(self.grid_layout_title)
+		self.box_layout.add_widget(self.grid_layout_buttons)
 
-		# Add grid layout to screen
-		self.add_widget(self.layout)
+		# Add box layout to screen
+		self.add_widget(self.box_layout)
 
 	# Change screen to annotation game
 	def anno_screen(self, *args):
-			self.manager.current = "annotate"
+		self.manager.current = 'annotate'
 
 	def inst_screen(self, *args):
-		self.manager.current = "instruction"
+		self.manager.current = 'instruction'
 
 class AnnotateScreen(Screen):
 	def __init__(self):
-		Screen.__init__(self, name="annotate")
-		self.boxlayout = BoxLayout(orientation="vertical")
+		Screen.__init__(self, name='annotate')
+		self.boxlayout = BoxLayout(orientation='vertical')
 		self.cont = Container()
-
-		self.back_button = Button(text="back", size_hint=(1,0.1))
+		self.back_button = Button(
+			text='Menu',
+			size_hint=(0.1,0.1),
+			background_normal='navy.png',
+			background_down='')
+		self.back_button.center = self.boxlayout.center
 		self.back_button.bind(on_press=self.menu_screen)
 
 		# Add widgets to box layout
-		self.boxlayout.add_widget(self.cont)
 		self.boxlayout.add_widget(self.back_button)
+		self.boxlayout.add_widget(self.cont)
 		self.add_widget(self.boxlayout)
-
-
 
 	def menu_screen(self, *args):
 		self.manager.current = 'menu'
+
 
 class InstructionScreen(Screen):
 	def __init__(self):
-		Screen.__init__(self, name="instruction")
+		Screen.__init__(self, name='instruction')
 
-		self.boxlayout = BoxLayout()
-		self.back_button = Button(text="back")
+		self.box_layout = BoxLayout()
+		self.back_button = Button(text='back')
 		self.back_button.bind(on_press=self.menu_screen)
-		self.boxlayout.add_widget(self.back_button)
-		self.add_widget(self.boxlayout)
+		self.box_layout.add_widget(self.back_button)
+		self.add_widget(self.box_layout)
 
 	def menu_screen(self, *args):
 		self.manager.current = 'menu'
-
 
 
 class ScorePicturesApp(App):
 	def build(self):
 		self.title = 'anno5i9 v0.1'
-
 		return ScreenManage()
 
+	def on_pause(self):
+		pass
 
-if __name__ == "__main__":
+	def on_resume(self):
+		pass
+
+
+if __name__ == '__main__':
 
 	ScorePicturesApp().run()
