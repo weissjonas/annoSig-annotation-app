@@ -2,19 +2,24 @@
 
 from kivy.app import App
 from kivy.uix.image import Image
+from kivy.uix.button import Button
 from kivy.core.window import Window
 from kivy.uix.behaviors import DragBehavior
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.core.window import Window
+from kivy.uix.screenmanager import Screen, ScreenManager
+from kivy.properties import ObjectProperty
 from functools import partial
+
+
 
 from glob import glob
 from os.path import join, dirname
 import csv
 from math import sqrt
-
+import inspect
 '''
 # Very basic example of the "change Picture with a persistent score" App
 
@@ -39,7 +44,6 @@ class DragImage(DragBehavior, Image):
 
 #Determine the drag distance and direction of drag
 def calculate_dist(x1, y1, x2, y2):
-
 	dx = x2 - x1
 	dy = y2 - y1
 	dist = sqrt((dx * dx) + (dy * dy))
@@ -73,21 +77,9 @@ class Container(BoxLayout):
 								 drag_rect_width=Window.width,
 								 drag_rect_height=Window.height)
 
-		# Add some nice buttons, with partial
-		# functools are a great lib in python, if you do not know it
-		# I would highly recommend to read the docs
-		# https://python.readthedocs.io/en/latest/library/functools.html
-		self.horiz_box = BoxLayout(orientation='horizontal')
-		self.left_label = Label(text='bad', size_hint=(0.1,1))
-		self.right_label = Label(text='good', size_hint=(0.1,1))
-		self.upper_label = Label(text='unclear', size_hint=(1,0.2), valign='top')
+		self.add_widget(self.display)
 
-		#self.add_widget(self.A)
-		self.horiz_box.add_widget(self.left_label)
-		self.horiz_box.add_widget(self.display)
-		self.horiz_box.add_widget(self.right_label)
-		self.add_widget(self.upper_label)
-		self.add_widget(self.horiz_box)
+
 
 	#Record initial down click coordinates
 	def on_touch_down(self, touch):
@@ -108,18 +100,12 @@ class Container(BoxLayout):
 		self.coord.append(touch.x)
 		self.coord.append(touch.y)
 		min_dist, dist, dx, dy = calculate_dist(*self.coord)
+		self.score_val = touch.y/Window.height
 
 		#Check if drag movement is big enough
-		if dist > min_dist:
+		if dist > min_dist and dx > 0:
 			#Assign score based on drag direction
-			if dx < 0 and dy < 50:
-				self.change_image(score='Bad')
-
-			elif (dx > -50 and dx < 50) and dy > 0:
-				self.change_image(score='Unclear')
-
-			elif dx > 0 and dy < 50:
-				self.change_image(score='Good')
+			self.change_image(score=self.score_val)
 		#Recenter display picture if drag magnitude is too small
 		else:
 			self.display.center = Window.center
@@ -140,10 +126,87 @@ class Container(BoxLayout):
 		return None
 
 
+# Create Screen Manager
+class ScreenManage(ScreenManager):
+	def __init__(self):
+		ScreenManager.__init__(self)
+		self.menu = MenuScreen()
+		self.anno = AnnotateScreen()
+		self.instr = InstructionScreen()
+
+		self.add_widget(self.menu)
+		self.add_widget(self.anno)
+		self.add_widget(self.instr)
+
+# Create Menu Screen
+class MenuScreen(Screen):
+	def __init__(self):
+		Screen.__init__(self, name="menu")
+
+		# Create Grid Layout for the buttons
+		self.layout = GridLayout(cols=1, rows=6, padding=20, spacing=30)
+
+		# Button to go to annotations
+		self.start_button = Button(text="Start Annotations")
+
+		# Button to go to instructions
+		self.instruct_button = Button(text="Instructions")
+		self.start_button.bind(on_press=self.anno_screen)
+		self.instruct_button.bind(on_press=self.inst_screen)
+
+		# Add widgets to grid layout
+		self.layout.add_widget(self.instruct_button)
+		self.layout.add_widget(self.start_button)
+
+		# Add grid layout to screen
+		self.add_widget(self.layout)
+
+	# Change screen to annotation game
+	def anno_screen(self, *args):
+			self.manager.current = "annotate"
+
+	def inst_screen(self, *args):
+		self.manager.current = "instruction"
+
+class AnnotateScreen(Screen):
+	def __init__(self):
+		Screen.__init__(self, name="annotate")
+		self.boxlayout = BoxLayout(orientation="vertical")
+		self.cont = Container()
+
+		self.back_button = Button(text="back", size_hint=(1,0.1))
+		self.back_button.bind(on_press=self.menu_screen)
+
+		# Add widgets to box layout
+		self.boxlayout.add_widget(self.cont)
+		self.boxlayout.add_widget(self.back_button)
+		self.add_widget(self.boxlayout)
+
+
+
+	def menu_screen(self, *args):
+		self.manager.current = 'menu'
+
+class InstructionScreen(Screen):
+	def __init__(self):
+		Screen.__init__(self, name="instruction")
+
+		self.boxlayout = BoxLayout()
+		self.back_button = Button(text="back")
+		self.back_button.bind(on_press=self.menu_screen)
+		self.boxlayout.add_widget(self.back_button)
+		self.add_widget(self.boxlayout)
+
+	def menu_screen(self, *args):
+		self.manager.current = 'menu'
+
+
+
 class ScorePicturesApp(App):
 	def build(self):
 		self.title = 'anno5i9 v0.1'
-		return Container()
+
+		return ScreenManage()
 
 
 if __name__ == "__main__":
