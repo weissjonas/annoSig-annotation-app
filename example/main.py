@@ -16,7 +16,7 @@ from kivy.graphics import Rectangle, Color
 
 from glob import glob
 from os.path import join, dirname
-import csv
+import c
 from math import sqrt
 
 
@@ -78,6 +78,7 @@ class Container(BoxLayout):
         # search for files in \images and append them to a list
         # From this list there are pulled
         self.pictures = []
+        self.previous_pictures = []
         curdir = dirname(__file__)
 
         for filename in glob(join(curdir, 'images', '*')):
@@ -148,6 +149,9 @@ class Container(BoxLayout):
 
     # On click release calculate direction of drag and assign score
     def on_touch_up(self, touch):
+        '''
+
+        '''
         super(Container, self).on_touch_up(touch)
 
         self.coord.append(touch.x)
@@ -198,7 +202,7 @@ class Container(BoxLayout):
                 if row[0] == self.current:
                     self.machine_score = row[1]
 
-        self.previous_image = self.current
+        self.previous_images.append(self.current)
 
         # Update picture to new
         if len(self.pictures) == 0:
@@ -315,11 +319,14 @@ class MenuScreen(Screen):
         self.grid_layout_buttons.add_widget(self.instruct_button)
         self.grid_layout_buttons.add_widget(self.start_button)
         self.grid_layout_title.add_widget(self.title)
-        self.grid_layout_title.add_widget(self.pic)
-        self.box_layout.add_widget(self.grid_layout_title)
-        self.box_layout.add_widget(self.grid_layout_buttons)
 
-        # Add box layout to screen
+
+
+        self.grid_layout_title.add_widget(self.pic)
+        self.box_layout.add_widget(self.grid_layout_t
+
+
+        self.box_layout.add_widget(self.grid_layout_b        # Add box layout to screen
         self.add_widget(self.box_layout)
 
     # Change screen to annotation game
@@ -395,7 +402,9 @@ class AnnotateScreen(Screen):
         self.cont.change_image()
 
     def undo(self, *args):
-        self.cont.pictures.insert(0, self.cont.previous_image)
+        if len(self.previous_pictures) == 0 :
+            return
+        self.cont.pictures.insert(0, self.previous_pictures.pop())
         self.cont.change_image()
 
 
