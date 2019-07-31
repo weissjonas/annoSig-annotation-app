@@ -18,6 +18,7 @@ from glob import glob
 from os.path import join, dirname
 import csv
 from math import sqrt
+import ntpath
 
 
 # Create an image class that supports drag behaviors
@@ -38,10 +39,10 @@ class DropDownMenu(DropDown):
 
 # Buttons to switch between screens
 class SwitchButton(Button):
-    background_normal = 'C:\\Users\\kvl_user\\PycharmProjects\\anno5i9\\example\\data\\navy.png'
-    background_down = 'C:\\Users\\kvl_user\\PycharmProjects\\anno5i9\\example\\data\\pressed.jpg'
+    background_normal = 'navy.png'
+    background_down = 'pressed.jpg'
     font_size = Window.height / 35
-    font_name = 'C:\\Users\\kvl_user\\PycharmProjects\\anno5i9\\example\\data\\Helvetica'
+    font_name = 'Helvetica'
     bold = True
 
 
@@ -51,7 +52,7 @@ class TextLabel(Label):
     text_size = (Window.width * 0.75, None)
     color = (0, 0, 128, 1)
     halign = 'center'
-    font_name = 'C:\\Users\\kvl_user\\PycharmProjects\\anno5i9\\example\\data\\Helvetica'
+    font_name = 'Helvetica'
     bold = True
     padding = (200, 200)
 
@@ -72,22 +73,27 @@ class Container(BoxLayout):
     def __init__(self):
         # call the __init__ of the parent class once
         BoxLayout.__init__(self, orientation='vertical')
+
         self.counter = 0
         self.total_counter = 1
 
         # search for files in \images and append them to a list
         # From this list there are pulled
         self.pictures = []
+        self.prev_pictures = []
         curdir = dirname(__file__)
 
         for filename in glob(join(curdir, 'images', '*')):
             self.pictures.append(filename)
 
+
         with open('user_score.csv', mode='r') as score_data:
             reader = csv.reader(score_data)
             for row in reader:
-                if row[0] in self.pictures:
-                    self.pictures.remove(row[0])
+                for pic in self.pictures:
+                    if row[0] == ntpath.basename(pic):
+                        self.pictures.remove(pic)
+
 
         if len(self.pictures) != 0:
             # Get total number of pictures to gauge progress
@@ -97,108 +103,130 @@ class Container(BoxLayout):
             self.current = self.pictures.pop(0)
 
             # Create progress bar widget
-            self.pb = ProgressBar(
-                max=self.prog_max)
+            self.pb = ProgressBar(max=self.prog_max)
 
-            self.box_layout = BoxLayout(orientation='vertical')
+            self.float_layout = FloatLayout()
+            self.blank_box = Label()
             self.grid_layout_menu = GridLayout(rows=1, spacing=50, padding=50)
-            self.grid_layout_scores = GridLayout(
-                cols=2,
-                size_hint=(None, 0.2),
-                spacing=Window.width / 20)
-            self.grid_layout_bottom = GridLayout(cols=3, size_hint=(1, 0.2),
-                                                 padding=10, spacing=Window.width / 25)
+            self.grid_layout_scores = GridLayout(cols=2,size_hint=(None, 0.2),spacing=0)
+            self.grid_layout_ranking = GridLayout(cols=2,size_hint=(None, 0.2),spacing=100)
+            self.grid_layout_bottom = GridLayout(cols=4, size_hint=(1, 0.2),
+                                                 padding=(20,0), spacing=(Window.width/15,0), pos=(20,Window.height-100))
 
-            self.display = Image(
-                source=self.current)
+            self.display = DragImage(
+                source=self.current,
+                drag_rect_width=Window.width,
+                drag_rect_height=Window.height)
 
             # Set initial progress
             self.pb.value = self.prog_max - len(self.pictures) - 1
-            # Create label to display previous score
-            # self.score_label = TextLabel(text='Your Scoring:')
 
-            self.machine_score_label = TextLabel(text='Your Ranking:')
-            self.test_label = Label(text='Score: ', color=(0, 0, 0, 1), size_hint_x=0.1, font_size=Window.height / 35)
-            self.score_label = Label(size_hint_x=0.1, font_size=Window.height / 35)
+            self.machine_score_label = TextLabel(text='')
+            self.score_label = Label(text='Score: ', color=(0, 0, 0, 1), size_hint_x=0.1, font_size=Window.height / 35)
+            self.machine_label = Label(text='Your Ranking: ', color=(0, 0, 0, 1), size_hint_x=0.1, font_size=Window.height / 35)
+            self.score = Label(size_hint_x=0.1, font_size=Window.height / 35)
+
             self.grid_layout_bottom.add_widget(self.pb)
-            self.grid_layout_scores.add_widget(self.test_label)
             self.grid_layout_scores.add_widget(self.score_label)
+            self.grid_layout_scores.add_widget(self.score)
             self.grid_layout_bottom.add_widget(self.grid_layout_scores)
-            self.grid_layout_bottom.add_widget(self.machine_score_label)
-            self.box_layout.add_widget(self.display)
-            self.add_widget(self.box_layout)
-            self.add_widget(self.grid_layout_bottom)
+            self.grid_layout_ranking.add_widget(self.machine_label)
+            self.grid_layout_ranking.add_widget(self.machine_score_label)
+            self.grid_layout_bottom.add_widget(self.grid_layout_ranking)
+
+
+
+            self.float_layout.add_widget(self.display)
+
+            self.float_layout.add_widget(self.grid_layout_bottom)
+            self.add_widget(self.float_layout)
+
 
 
         # Display message if they have finished
         else:
-            self.finish_label = TextLabel(text='You have annotated all the data currently available, great work!')
-            self.add_widget(self.finish_label)
+            try:
+                self.finish_label = TextLabel(text='You have annotated all the data currently available, great work!')
+                self.add_widget(self.finish_label)
+            except:
+                return
 
     # Record initial down click coordinates
     def on_touch_down(self, touch):
+
         super(Container, self).on_touch_down(touch)
         self.coord = []
         self.coord.append(touch.x)
         self.coord.append(touch.y)
+        try:
+            self.machine_score_label.text = ''
+        except:
+            return
+
+
 
     def on_touch_move(self, touch):
         super(Container, self).on_touch_move(touch)
-        self.update_label(self.score_label, touch)
-
+        try:
+            self.update_label(self.score, touch)
+        except:
+            return
     # On click release calculate direction of drag and assign score
     def on_touch_up(self, touch):
         super(Container, self).on_touch_up(touch)
+        try:
+            self.coord.append(touch.x)
+            self.coord.append(touch.y)
 
-        self.coord.append(touch.x)
-        self.coord.append(touch.y)
+            min_dist, dist, dx, dy = calculate_dist(*self.coord)
+            self.score_val = touch.y / Window.height
 
-        min_dist, dist, dx, dy = calculate_dist(*self.coord)
-        self.score_val = touch.y / Window.height
+            # Check if drag movement is big enough
+            if dist > min_dist and dx > Window.width / 5:
+                # Assign score based on drag direction
+                self.change_image(score=self.score_val)
 
-        # Check if drag movement is big enough
-        if dist > min_dist and dx > Window.width / 5:
-            # Assign score based on drag direction
-            self.change_image(score=self.score_val)
+                # Assign ranking based on comparison to machine learning score
+                self.ranking = abs(self.score_val -float(self.machine_score))
+                self.ranking_label = str('')
+                if self.ranking < 0.1:
+                    self.ranking_label = 'Excellent!'
+                elif self.ranking < 0.2:
+                    self.ranking_label = 'Very Good!'
+                elif self.ranking < 0.3:
+                    self.ranking_label = 'Good!'
+                elif self.ranking < 0.4:
+                    self.ranking_label = 'OK!'
+                elif self.ranking < 0.5:
+                    self.ranking_label = 'Not Quite!'
 
-            # Assign ranking based on comparison to machine learning score
-            self.ranking = 0
-            # abs(self.score_val -float(self.machine_score))
-            if self.ranking < 0.1:
-                self.ranking_label = 'Excellent!'
-            elif self.ranking < 0.2:
-                self.ranking_label = 'Very Good!'
-            elif self.ranking < 0.3:
-                self.ranking_label = 'Good!'
-            elif self.ranking < 0.4:
-                self.ranking_label = 'OK!'
-            elif self.ranking < 0.5:
-                self.ranking_label = 'Not Quite!'
+                self.machine_score_label.text = self.ranking_label
 
-            self.machine_score_label.text = 'Your Ranking: ' + self.ranking_label
 
-        # Recenter display picture if drag is too small
-        else:
-            self.display.center = self.center
 
+            # Recenter display picture if drag is too small
+            else:
+                self.display.center = self.center
+                self.ranking_label = 'Try Again'
+                self.machine_score_label.text = self.ranking_label
+        except:
+            return
     # Record drag value in csv file and move to next image
     def change_image(self, score=None):
         '''
-		Change the displayed image and write the filename and score to score.csv
-		'''
+        Change the displayed image and write the filename and score to score.csv
+        '''
 
         with open('user_score.csv', mode='a', newline='') as score_data:
             writer = csv.writer(score_data)
-            writer.writerow([self.current, score])
+            writer.writerow([ntpath.basename(self.current), score])
 
         # Find score assigned by machine learner
         with open('machine_score.csv', mode='r') as machine:
             reader = csv.reader(machine)
             for row in reader:
-                if row[0] == self.current:
+                if row[0] == ntpath.basename(self.current):
                     self.machine_score = row[1]
-
-        self.previous_image = self.current
 
         # Update picture to new
         if len(self.pictures) == 0:
@@ -207,7 +235,7 @@ class Container(BoxLayout):
 
             self.add_widget(self.end_label)
 
-        elif self.counter == 2:
+        elif self.counter == 9:
             self.box_layout.remove_widget(self.display)
             self.cont_label = TextLabel(text='Do you want to continue? '
                                              '\n You\'ve annotated ' + str(self.total_counter)
@@ -228,6 +256,7 @@ class Container(BoxLayout):
             self.current = self.pictures.pop(0)
             self.display.center = self.center
             self.display.source = self.current
+            self.score.text = ''
 
             # Update progress bar
             self.pb.value = self.prog_max - len(self.pictures) - 1
@@ -236,26 +265,30 @@ class Container(BoxLayout):
             self.counter = self.counter + 1
             self.total_counter = self.total_counter + 1
 
+            self.prev_pictures.append(self.current)
+
+
     def update_label(self, label, touch):
         score = int((touch.y / Window.height) * 100)
 
         label.text = str(score)
 
         if score > 75:
-            label.color = (16, 96, 17, 1)
+            label.color = (0,150,0,1)
         elif score > 50:
-            label.color = (157, 206, 34, 1)
-        elif score > 35:
-            label.color = (224, 166, 66, 1)
+            label.color = (0, 50, 0, 1)
+        elif score > 25:
+            label.color = (5, 50, 0, 1)
         elif score > 0:
-            label.color = (1, 0, 0, 1)
+            label.color = (50, 0, 0, 1)
 
     def cont_anno(self, *args):
         self.box_layout.remove_widget(self.cont_grid_layout)
         self.box_layout.add_widget(self.display)
 
-        self.counter = 0
         self.change_image()
+        self.counter = 0
+
 
 
 # Create Screen Manager
@@ -301,7 +334,7 @@ class MenuScreen(Screen):
         self.instruct_button.bind(on_press=self.inst_screen)
 
         # Menu image
-        self.pic = Image(source='C:\\Users\\kvl_user\\PycharmProjects\\anno5i9\\example\\data\\icon.png')
+        self.pic = Image(source='icon.png')
         # Game Title
         self.title = Label(
             text="Fetal ECG Annotation Game",
@@ -309,7 +342,7 @@ class MenuScreen(Screen):
             size_hint_y=0.4,
             font_size=Window.height / 20,
             bold=True,
-            font_name='C:\\Users\\kvl_user\\PycharmProjects\\anno5i9\\example\\data\\Helvetica')
+            font_name='Helvetica')
 
         # Add widgets to grid layout
         self.grid_layout_buttons.add_widget(self.instruct_button)
@@ -350,31 +383,39 @@ class AnnotateScreen(Screen):
         self.menu_button = SwitchButton(text='Menu', size_hint=(None, 0.2))
         self.undo_button = SwitchButton(text='Undo', size_hint=(None, 0.2))
         self.skip_button = SwitchButton(text='Skip', size_hint=(None, 0.2))
+        self.example_button = SwitchButton(text='Examples', size_hint=(None, 0.2))
 
         # Create drop down
         # self.drop_down = DropDownMenu()
         # self.drop_button = Button(
         # background_normal='menu_icon.png',
         # size_hint=(0.5,0.1))
+
         # Create Label
-        self.label = Label(text='Annotations', color=(1, 1, 1, 1))
+        self.label = Label(text='Annotations', color=(0, 0, 128, 1), font_size=Window.height/30)
         # Bind switching functions to buttons
         # self.drop_button.bind(on_press=self.drop_down.open)
         # self.drop_down.menu_button.bind(on_press=self.menu_screen)
         # self.drop_down.example_button.bind(on_press=self.example_screen)
+
         self.menu_button.bind(on_press=self.menu_screen)
         self.skip_button.bind(on_press=self.skip)
         self.undo_button.bind(on_press=self.undo)
+        self.example_button.bind(on_press=self.example_screen)
 
         # Add widgets to box layout
         self.grid_layout.add_widget(self.label)
         self.grid_layout.add_widget(self.menu_button)
         self.grid_layout.add_widget(self.undo_button)
         self.grid_layout.add_widget(self.skip_button)
+        self.grid_layout.add_widget(self.example_button)
         # self.grid_layout.add_widget(self.drop_button)
 
-        self.box_layout.add_widget(self.grid_layout)
         self.box_layout.add_widget(self.cont)
+        self.box_layout.add_widget(self.grid_layout)
+
+
+
 
         # Add box widget to screen
         self.add_widget(self.box_layout)
@@ -395,8 +436,16 @@ class AnnotateScreen(Screen):
         self.cont.change_image()
 
     def undo(self, *args):
-        self.cont.pictures.insert(0, self.cont.previous_image)
-        self.cont.change_image()
+        try:
+
+            self.cont.pictures.insert(0, self.cont.prev_pictures.pop())
+            self.cont.change_image()
+            self.cont.counter = self.cont.counter - 1
+            self.cont.total_counter = self.cont.total_counter - 1
+            self.cont.pb.value = self.cont.pb.value - 1
+
+        except IndexError:
+            return
 
 
 # First Instruction Screen
@@ -434,7 +483,7 @@ class InstructionScreen1(Screen):
         self.menu_button.bind(on_press=self.menu_screen)
         self.next_button.bind(on_press=self.next_page)
         # Create ECG photo widget
-        self.image = Image(source='C:\\Users\\kvl_user\\PycharmProjects\\anno5i9\\example\\data\\ECG.jpg')
+        self.image = Image(source='ECG.jpg')
         # Write text label for above photo
         self.label_1 = TextLabel(
             size_hint=(1, 0.3),
@@ -503,7 +552,7 @@ class InstructionScreen2(Screen):
             text='A high quality fetal ECG reading has clear fetal heartbeats visible between the mother\'s '
                  'heartbeats. \n There are typically two fetal heartbeats in between each maternal heartbeat. ',
             size_hint=(1, 0.1))
-        self.image = Image(source='C:\\Users\\kvl_user\\PycharmProjects\\anno5i9\\example\\data\\inst1.png')
+        self.image = Image(source='inst1.png')
 
         # Add widgets
         self.grid_layout.add_widget(self.back_button)
@@ -555,7 +604,7 @@ class InstructionScreen3(Screen):
                  'A score of 100 would be a high quality clear signal and a score of 0 would be a very poor '
                  'and noisy signal. A score is assigned by dragging the image to the right side of the screen.',
             size_hint=(1, 0.2))
-        self.image = Image(source='C:\\Users\\kvl_user\\PycharmProjects\\anno5i9\\example\\data\\inst2.jpg')
+        self.image = Image(source='inst2.jpg')
 
         # Add widgets
         self.grid_layout.add_widget(self.back_button)
@@ -600,7 +649,7 @@ class InstructionScreen4(Screen):
         self.next_button.bind(on_press=self.next_screen)
 
         self.label = TextLabel(text='Annotation Screen Layout', size_hint=(1, 0.1))
-        self.image = Image(source='C:\\Users\\kvl_user\\PycharmProjects\\anno5i9\\example\\data\\anno_screen.png')
+        self.image = Image(source='anno_screen.png')
 
         # Add widgets
         self.grid_layout.add_widget(self.back_button)
