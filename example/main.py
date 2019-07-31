@@ -80,7 +80,9 @@ class Container(BoxLayout):
         # search for files in \images and append them to a list
         # From this list there are pulled
         self.pictures = []
-        self.prev_pictures = []
+
+
+
         curdir = dirname(__file__)
 
         for filename in glob(join(curdir, 'images', '*')):
@@ -101,6 +103,8 @@ class Container(BoxLayout):
 
             # The first image is updated with the first element in the list
             self.current = self.pictures.pop(0)
+            self.prev_pictures = [self.current]
+
 
             # Create progress bar widget
             self.pb = ProgressBar(max=self.prog_max)
@@ -133,15 +137,10 @@ class Container(BoxLayout):
             self.grid_layout_ranking.add_widget(self.machine_label)
             self.grid_layout_ranking.add_widget(self.machine_score_label)
             self.grid_layout_bottom.add_widget(self.grid_layout_ranking)
-
-
-
             self.float_layout.add_widget(self.display)
 
             self.float_layout.add_widget(self.grid_layout_bottom)
             self.add_widget(self.float_layout)
-
-
 
         # Display message if they have finished
         else:
@@ -158,12 +157,11 @@ class Container(BoxLayout):
         self.coord = []
         self.coord.append(touch.x)
         self.coord.append(touch.y)
+
         try:
             self.machine_score_label.text = ''
         except:
             return
-
-
 
     def on_touch_move(self, touch):
         super(Container, self).on_touch_move(touch)
@@ -173,104 +171,108 @@ class Container(BoxLayout):
             return
     # On click release calculate direction of drag and assign score
     def on_touch_up(self, touch):
+        '''
+
+        '''
         super(Container, self).on_touch_up(touch)
         try:
             self.coord.append(touch.x)
             self.coord.append(touch.y)
+        except AttributeError:
+            return
 
+        try:
             min_dist, dist, dx, dy = calculate_dist(*self.coord)
+        except TypeError:
+            return
+        if len(self.pictures) != 0:
             self.score_val = touch.y / Window.height
 
             # Check if drag movement is big enough
             if dist > min_dist and dx > Window.width / 5:
-                # Assign score based on drag direction
-                self.change_image(score=self.score_val)
 
-                # Assign ranking based on comparison to machine learning score
-                self.ranking = abs(self.score_val -float(self.machine_score))
-                self.ranking_label = str('')
-                if self.ranking < 0.1:
-                    self.ranking_label = 'Excellent!'
-                elif self.ranking < 0.2:
-                    self.ranking_label = 'Very Good!'
-                elif self.ranking < 0.3:
-                    self.ranking_label = 'Good!'
-                elif self.ranking < 0.4:
-                    self.ranking_label = 'OK!'
-                elif self.ranking < 0.5:
-                    self.ranking_label = 'Not Quite!'
+                    # Assign score based on drag direction
+                    self.change_image(score=self.score_val)
+                    self.prev_pictures.append(self.current)
 
-                self.machine_score_label.text = self.ranking_label
+                    # Assign ranking based on comparison to machine learning score
+                    self.ranking = abs(self.score_val -float(self.machine_score))
+                    self.ranking_label = str('')
+                    if self.ranking < 0.1:
+                        self.ranking_label = 'Excellent!'
+                    elif self.ranking < 0.2:
+                        self.ranking_label = 'Very Good!'
+                    elif self.ranking < 0.3:
+                        self.ranking_label = 'Good!'
+                    elif self.ranking < 0.4:
+                        self.ranking_label = 'OK!'
+                    elif self.ranking < 0.5:
+                        self.ranking_label = 'Not Quite!'
 
+                    self.machine_score_label.text = self.ranking_label
 
+                    # Update progress bar
+                    self.pb.value = self.prog_max - len(self.pictures) - 1
+
+                    # Update counter
+                    self.counter = self.counter + 1
+                    self.total_counter = self.total_counter + 1
 
             # Recenter display picture if drag is too small
             else:
                 self.display.center = self.center
                 self.ranking_label = 'Try Again'
                 self.machine_score_label.text = self.ranking_label
-        except:
-            return
+
     # Record drag value in csv file and move to next image
     def change_image(self, score=None):
         '''
         Change the displayed image and write the filename and score to score.csv
         '''
 
-        with open('user_score.csv', mode='a', newline='') as score_data:
-            writer = csv.writer(score_data)
-            writer.writerow([ntpath.basename(self.current), score])
-
-        # Find score assigned by machine learner
-        with open('machine_score.csv', mode='r') as machine:
-            reader = csv.reader(machine)
-            for row in reader:
-                if row[0] == ntpath.basename(self.current):
-                    self.machine_score = row[1]
-
-        # Update picture to new
         if len(self.pictures) == 0:
             self.clear_widgets()
             self.end_label = TextLabel(text='You have finished')
 
             self.add_widget(self.end_label)
 
-        elif self.counter == 9:
-            self.box_layout.remove_widget(self.display)
+        elif self.counter == 3:
+            self.float_layout.remove_widget(self.display)
             self.cont_label = TextLabel(text='Do you want to continue? '
                                              '\n You\'ve annotated ' + str(self.total_counter)
                                              + ' signals this session!')
-            self.cont_button = SwitchButton(
-                text='Continue',
-                size_hint=(0.2, 0.2))
+            self.cont_button = SwitchButton(text='Continue',size_hint=(0.2, 0.2))
             self.cont_button.bind(on_press=self.cont_anno)
+
+
             self.cont_grid_layout = GridLayout(rows=1, spacing=(Window.width / 30),
-                                               size_hint_y=0.1,
-                                               padding=(Window.width / 30, Window.height / 3))
+                                               padding=(Window.width / 20, Window.height / 2.5))
             self.cont_grid_layout.add_widget(self.cont_label)
             self.cont_grid_layout.add_widget(self.cont_button)
-            self.box_layout.add_widget(self.cont_grid_layout, index=1)
+            self.float_layout.add_widget(self.cont_grid_layout)
 
 
         else:
+            with open('user_score.csv', mode='a', newline='') as score_data:
+                writer = csv.writer(score_data)
+                writer.writerow([ntpath.basename(self.current), score])
+
+            # Find score assigned by machine learner
+            with open('machine_score.csv', mode='r') as machine:
+                reader = csv.reader(machine)
+                for row in reader:
+                    if row[0] == ntpath.basename(self.current):
+                        self.machine_score = row[1]
+
+
             self.current = self.pictures.pop(0)
             self.display.center = self.center
             self.display.source = self.current
             self.score.text = ''
 
-            # Update progress bar
-            self.pb.value = self.prog_max - len(self.pictures) - 1
-
-            # Update counter
-            self.counter = self.counter + 1
-            self.total_counter = self.total_counter + 1
-
-            self.prev_pictures.append(self.current)
-
 
     def update_label(self, label, touch):
         score = int((touch.y / Window.height) * 100)
-
         label.text = str(score)
 
         if score > 75:
@@ -283,8 +285,8 @@ class Container(BoxLayout):
             label.color = (50, 0, 0, 1)
 
     def cont_anno(self, *args):
-        self.box_layout.remove_widget(self.cont_grid_layout)
-        self.box_layout.add_widget(self.display)
+        self.float_layout.remove_widget(self.cont_grid_layout)
+        self.float_layout.add_widget(self.display, index=1)
 
         self.change_image()
         self.counter = 0
@@ -297,19 +299,13 @@ class ScreenManage(ScreenManager):
         ScreenManager.__init__(self)
         self.menu = MenuScreen()
         self.anno = AnnotateScreen()
-        self.inst1 = InstructionScreen1()
-        self.inst2 = InstructionScreen2()
-        self.inst3 = InstructionScreen3()
-        self.inst4 = InstructionScreen4()
+        self.inst1 = InstructionScreen()
         self.tutorial = Tutorial()
         self.example = ExampleScreen()
 
         self.add_widget(self.menu)
         self.add_widget(self.anno)
         self.add_widget(self.inst1)
-        self.add_widget(self.inst2)
-        self.add_widget(self.inst3)
-        self.add_widget(self.inst4)
         self.add_widget(self.tutorial)
         self.add_widget(self.example)
 
@@ -351,8 +347,6 @@ class MenuScreen(Screen):
         self.grid_layout_title.add_widget(self.pic)
         self.box_layout.add_widget(self.grid_layout_title)
         self.box_layout.add_widget(self.grid_layout_buttons)
-
-        # Add box layout to screen
         self.add_widget(self.box_layout)
 
     # Change screen to annotation game
@@ -385,19 +379,8 @@ class AnnotateScreen(Screen):
         self.skip_button = SwitchButton(text='Skip', size_hint=(None, 0.2))
         self.example_button = SwitchButton(text='Examples', size_hint=(None, 0.2))
 
-        # Create drop down
-        # self.drop_down = DropDownMenu()
-        # self.drop_button = Button(
-        # background_normal='menu_icon.png',
-        # size_hint=(0.5,0.1))
-
         # Create Label
         self.label = Label(text='Annotations', color=(0, 0, 128, 1), font_size=Window.height/30)
-        # Bind switching functions to buttons
-        # self.drop_button.bind(on_press=self.drop_down.open)
-        # self.drop_down.menu_button.bind(on_press=self.menu_screen)
-        # self.drop_down.example_button.bind(on_press=self.example_screen)
-
         self.menu_button.bind(on_press=self.menu_screen)
         self.skip_button.bind(on_press=self.skip)
         self.undo_button.bind(on_press=self.undo)
@@ -413,9 +396,6 @@ class AnnotateScreen(Screen):
 
         self.box_layout.add_widget(self.cont)
         self.box_layout.add_widget(self.grid_layout)
-
-
-
 
         # Add box widget to screen
         self.add_widget(self.box_layout)
@@ -433,23 +413,25 @@ class AnnotateScreen(Screen):
     # self.drop_down.dismiss(self)
 
     def skip(self, *args):
-        self.cont.change_image()
+        if len(self.cont.pictures) > 0:
+            self.cont.prev_pictures.append(self.cont.current)
+            self.cont.change_image()
+            self.cont.pb.value = self.cont.pb.value  + 1
 
     def undo(self, *args):
         try:
-
-            self.cont.pictures.insert(0, self.cont.prev_pictures.pop())
-            self.cont.change_image()
-            self.cont.counter = self.cont.counter - 1
-            self.cont.total_counter = self.cont.total_counter - 1
-            self.cont.pb.value = self.cont.pb.value - 1
-
+            if len(self.cont.pictures) > 0:
+                self.cont.pictures.insert(0, self.cont.prev_pictures.pop(-2))
+                self.cont.change_image()
+                self.cont.pb.value = self.cont.pb.value - 1
+                self.cont.counter = self.cont.counter - 1
+                self.cont.total_counter = self.cont.total_counter - 1
         except IndexError:
             return
 
 
-# First Instruction Screen
-class InstructionScreen1(Screen):
+
+class InstructionScreen(Screen):
     def __init__(self):
         Screen.__init__(self, name='inst1')
 
@@ -463,25 +445,12 @@ class InstructionScreen1(Screen):
             padding=(Window.width / 50, 10),
             spacing=(Window.width / 1.7, 10))
 
-        # Create drop down
-        # self.drop_down = DropDownMenu()
-        # self.drop_button = Button(
-        # background_normal='menu_icon.png',
-        # size_hint=(0.5, 0.1))
-        # Create Label
-        self.label = Label(text='Annotations', color=(1, 1, 1, 1))
-        # Bind switching functions to buttons
-        # self.drop_button.bind(on_press=self.drop_down.open)
-        # self.drop_down.menu_button.bind(on_press=self.menu_screen)
-        # self.drop_down.example_button.bind(on_press=self.example_screen)
-
         # Create buttons and spacing widgets
         self.menu_button = SwitchButton(text='Menu', size_hint_x=0.2)
-
         self.next_button = SwitchButton(text='Next', size_hint_x=0.2)
         # Bind switching functions to buttons
         self.menu_button.bind(on_press=self.menu_screen)
-        self.next_button.bind(on_press=self.next_page)
+        self.next_button.bind(on_press=self.page_2)
         # Create ECG photo widget
         self.image = Image(source='ECG.jpg')
         # Write text label for above photo
@@ -508,171 +477,93 @@ class InstructionScreen1(Screen):
         self.box_layout.add_widget(self.grid_layout)
         # Add box layout to screen
         self.add_widget(self.box_layout)
+        # Create back button
+
+
 
     def menu_screen(self, *args):
         self.manager.current = 'menu'
-        self.manager.transition.direction = 'left'
-
-    # self.drop_down.dismiss(self)
+        self.manager.transition.direction = 'right'
+        self.page_1()
 
     def example_screen(self, *args):
         self.manager.current = 'example'
         self.manager.transition.direction = 'right'
 
-    # self.drop_down.dismiss(self)
+    def unbind_all(self):
+        self.next_button.unbind(on_press=self.page_1)
+        self.next_button.unbind(on_press=self.page_2)
+        self.next_button.unbind(on_press=self.page_3)
+        self.next_button.unbind(on_press=self.page_4)
+        self.back_button.unbind(on_press=self.page_1)
+        self.back_button.unbind(on_press=self.page_2)
+        self.back_button.unbind(on_press=self.page_3)
+        self.back_button.unbind(on_press=self.page_4)
 
-    def next_page(self, *args):
-        self.manager.current = 'inst2'
-        self.manager.transition.direction = 'left'
+    def page_1(self, *args):
+        self.label_1.text = 'An electrocardiogram (ECG) is a non-invasive procedure that measures '\
+                            'the electrical activity of the heart. ECGs are used to monitor a fetus\' health '\
+                            'in utero. Fetal ECG readings often contain a lot of noise and we must go '\
+                            'through and annotate these readings to record if it is usable or not.'
+        self.label_2.text = 'Annotating this data is extremely important, but also very time consuming. '\
+                            'Taking a few minutes to annotate using this app during a coffee break, commute, '\
+                            'waiting room, or before bed will greatly help ensure that only high quality ECG '\
+                            'data is used by doctors and researchers.'
+        self.image.source = 'ECG.jpg'
 
+        self.grid_layout.remove_widget(self.back_button)
+        self.grid_layout.cols = 2
+        self.grid_layout.padding = (Window.width / 50, 10)
+        self.grid_layout.spacing = (Window.width / 1.7, 10)
 
-# Second Instruction Screen
-class InstructionScreen2(Screen):
-    def __init__(self):
-        Screen.__init__(self, name='inst2')
+        self.unbind_all()
+        self.next_button.bind(on_press=self.page_2)
 
-        self.box_layout = BoxLayout(orientation='vertical', padding=(20, 0))
-        # Create grid layout to house buttons
-        self.grid_layout = GridLayout(
-            cols=3,
-            rows=1,
-            size_hint=(1, 0.15),
-            padding=(Window.width / 50, 10),
-            spacing=(Window.width / 5, 10))
-        # Create buttons and empty spacing widgets
-        self.back_button = SwitchButton(text='Back', size_hint_x=0.85)
-        self.menu_button = SwitchButton(text='Menu', size_hint_x=0.85)
-        self.next_button = SwitchButton(text='Next', size_hint_x=0.85)
-        # Bind switching functions
-        self.back_button.bind(on_press=self.inst1_screen)
-        self.menu_button.bind(on_press=self.menu_screen)
-        self.next_button.bind(on_press=self.next_screen)
-        # Create text labels
-        self.label_1 = TextLabel(
-            text='A high quality fetal ECG reading has clear fetal heartbeats visible between the mother\'s '
-                 'heartbeats. \n There are typically two fetal heartbeats in between each maternal heartbeat. ',
-            size_hint=(1, 0.1))
-        self.image = Image(source='inst1.png')
+    def page_2(self, *args):
+        self.label_1.text = 'A high quality fetal ECG reading has clear fetal heartbeats visible between the mother\'s '\
+                            'heartbeats. \n There are typically two fetal heartbeats in between each maternal heartbeat. '
+        self.image.source = 'inst1.png'
+        self.label_2.text = ''
 
-        # Add widgets
-        self.grid_layout.add_widget(self.back_button)
-        self.grid_layout.add_widget(self.menu_button)
-        self.grid_layout.add_widget(self.next_button)
-        self.box_layout.add_widget(self.label_1)
-        self.box_layout.add_widget(self.image)
-        self.box_layout.add_widget(self.grid_layout)
-        self.add_widget(self.box_layout)
+        # Adjust grid layout to accomodate back button
+        self.grid_layout.cols = 3
+        self.grid_layout.padding = (Window.width/50, 10)
+        self.grid_layout.spacing = (Window.width/5, 10)
+        self.back_button = SwitchButton(text='Back', size_hint_x=0.2)
+        if len(list(self.grid_layout.children)) < 3:
+            self.grid_layout.add_widget(self.back_button, index=2)
 
-    def inst1_screen(self, *args):
-        self.manager.current = 'inst1'
-        self.manager.transition.direction = 'right'
+        self.unbind_all()
+        self.back_button.bind(on_press=self.page_1)
+        self.next_button.bind(on_press=self.page_3)
 
-    def menu_screen(self, *args):
-        self.manager.current = 'menu'
-        self.manager.transition.direction = 'right'
+    def page_3(self, *args):
+        self.label_1.text = 'The signals will be assigned a score between 0 and 100. '\
+                            'A score of 100 would be a high quality clear signal and a score of 0 would be a very poor '\
+                            'and noisy signal. A score is assigned by dragging the image to the right side of the screen.'
+        self.image.source = 'inst2.jpg'
+        self.label_2.text = ''
+        # Adjust grid layout to accomodate back button
+        self.grid_layout.cols = 3
+        self.grid_layout.padding = (Window.width / 50, 10)
+        self.grid_layout.spacing = (Window.width / 5, 10)
 
-    def next_screen(self, *args):
-        self.manager.current = 'inst3'
-        self.manager.transition.direction = 'left'
+        self.unbind_all()
+        self.back_button.bind(on_press=self.page_2)
+        self.next_button.bind(on_press=self.page_4)
 
+    def page_4(self, *args):
+        self.label_1.text = 'Annotation Screen Layout'
+        self.image.source = 'anno_screen.png'
+        self.label_2.text = ''
 
-# Third Instruction Screen
-class InstructionScreen3(Screen):
-    def __init__(self):
-        Screen.__init__(self, name='inst3')
+        self.grid_layout.remove_widget(self.next_button)
+        self.grid_layout.cols = 2
+        self.grid_layout.padding = (Window.width / 50, 10)
+        self.grid_layout.spacing = (Window.width / 1.7, 10)
 
-        self.box_layout = BoxLayout(orientation='vertical', padding=(20, 0))
-        # Create grid layout to house buttons
-        self.grid_layout = GridLayout(
-            cols=3,
-            rows=1,
-            size_hint=(1, 0.17),
-            padding=(Window.width / 50, 10),
-            spacing=(Window.width / 5, 10))
-
-        # Create buttons and empty spacing widgets
-        self.back_button = SwitchButton(text='Back')
-        self.menu_button = SwitchButton(text='Menu')
-        self.next_button = SwitchButton(text='Next')
-        # Bind switching functions
-        self.back_button.bind(on_press=self.inst2_screen)
-        self.menu_button.bind(on_press=self.menu_screen)
-        self.next_button.bind(on_press=self.next_screen)
-        # Create text labels
-        self.label = TextLabel(
-            text='The signals will be assigned a score between 0 and 100. '
-                 'A score of 100 would be a high quality clear signal and a score of 0 would be a very poor '
-                 'and noisy signal. A score is assigned by dragging the image to the right side of the screen.',
-            size_hint=(1, 0.2))
-        self.image = Image(source='inst2.jpg')
-
-        # Add widgets
-        self.grid_layout.add_widget(self.back_button)
-        self.grid_layout.add_widget(self.menu_button)
-        self.grid_layout.add_widget(self.next_button)
-        self.box_layout.add_widget(self.label)
-        self.box_layout.add_widget(self.image)
-        self.box_layout.add_widget(self.grid_layout)
-        self.add_widget(self.box_layout)
-
-    def inst2_screen(self, *args):
-        self.manager.current = 'inst2'
-        self.manager.transition.direction = 'right'
-
-    def menu_screen(self, *args):
-        self.manager.current = 'menu'
-        self.manager.transition.direction = 'right'
-
-    def next_screen(self, *args):
-        self.manager.current = 'inst4'
-        self.manager.transition.direction = 'left'
-
-
-# Fourth Instruction Screen
-class InstructionScreen4(Screen):
-    def __init__(self):
-        Screen.__init__(self, name='inst4')
-
-        # Create box layout to house widgets
-        self.box_layout = BoxLayout(orientation='vertical')
-        # Create grid layout to house buttons
-        self.grid_layout = GridLayout(cols=5, rows=1, size_hint=(1, 0.15))
-        # Create buttons and empty spacing widgets
-        self.back_button = SwitchButton(text='Back')
-        self.empty1 = Label()
-        self.menu_button = SwitchButton(text='Menu')
-        self.empty2 = Label()
-        self.next_button = SwitchButton(text='Next')
-        # Bind switching functions
-        self.back_button.bind(on_press=self.inst3_screen)
-        self.menu_button.bind(on_press=self.menu_screen)
-        self.next_button.bind(on_press=self.next_screen)
-
-        self.label = TextLabel(text='Annotation Screen Layout', size_hint=(1, 0.1))
-        self.image = Image(source='anno_screen.png')
-
-        # Add widgets
-        self.grid_layout.add_widget(self.back_button)
-        self.grid_layout.add_widget(self.empty1)
-        self.grid_layout.add_widget(self.menu_button)
-        self.grid_layout.add_widget(self.empty2)
-        self.grid_layout.add_widget(self.next_button)
-        self.box_layout.add_widget(self.label)
-        self.box_layout.add_widget(self.image)
-        self.box_layout.add_widget(self.grid_layout)
-        self.add_widget(self.box_layout)
-
-    def inst3_screen(self, *args):
-        self.manager.current = 'inst3'
-        self.manager.transition.direction = 'right'
-
-    def menu_screen(self, *args):
-        self.manager.current = 'menu'
-        self.manager.transition.direction = 'right'
-
-    def next_screen(self, *args):
-        self.manager.current = 'tutorial'
-        self.manager.transition.direction = 'left'
+        self.unbind_all()
+        self.back_button.bind(on_press=self.page_3)
 
 
 # Tutorial Screen (run through of the game)
