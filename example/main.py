@@ -15,15 +15,18 @@ from kivy.uix.widget import WidgetException
 
 from glob import glob
 from os.path import join, dirname
+from random import randint
 import csv
 from math import sqrt
 import ntpath
 import datetime
 
-# Store username in global variable
-username = None
-# Store user screen in global variable to access username after user enters it for first time
+# Store userid and username in global variable
+user_id = None
+username = ''
+# Store screens in global variable to access within other classes
 user = None
+menu = None
 # Store how many annotations completed by user
 total_annos = 0
 total_counter = 0
@@ -71,7 +74,7 @@ class Container(BoxLayout):
     Window.clearcolor = (1, 1, 1, 1)
 
     def __init__(self):
-        global username, total_annos, total_ranking, avg_ranking, total_counter
+        global user_id, username, total_annos, total_ranking, avg_ranking, total_counter
         # call the __init__ of the parent class once
         BoxLayout.__init__(self, orientation='vertical')
         # Initialize counter to track how many pictures are done in each grouping
@@ -94,8 +97,11 @@ class Container(BoxLayout):
         with open('user_score.csv', mode='r') as score_data:
             reader = csv.reader(score_data)
             for row in reader:
+                # Get user's id
+                user_id = row[1]
                 # Get user's username
-                username = row[1]
+                if row[5] != '':
+                    username = row[5]
                 # Get user's total amount of annotations completed
                 if row[3] != '':
                     total_annos = total_annos + 1
@@ -224,8 +230,8 @@ class Container(BoxLayout):
             # Write picture name and score to csv
             with open('user_score.csv', mode='a', newline='') as score_data:
                 writer = csv.writer(score_data)
-                writer.writerow([self.date.strftime("%d-%m-%Y"), username, ntpath.basename(self.current), score,
-                                 self.ranking])
+                writer.writerow([self.date.strftime("%d-%m-%Y"), user_id, ntpath.basename(self.current), score,
+                                 self.ranking, ''])
 
             # Find score assigned by machine learner
             with open('machine_score.csv', mode='r') as machine:
@@ -309,16 +315,18 @@ class Container(BoxLayout):
 class ScreenManage(ScreenManager):
     def __init__(self):
         ScreenManager.__init__(self)
-        global user
-        self.menu = MenuScreen()
+        global user, menu
+
+        self.start = StartScreen()
         self.anno = AnnotateScreen()
+        menu = MenuScreen()
         self.inst1 = InstructionScreen()
         self.tutorial1 = TutorialScreen1()
         self.tutorial2 = TutorialScreen2()
         self.tutorialend = TutorialEndScreen()
         self.example = ExampleScreen()
         user = UserScreen()
-        self.start = StartScreen()
+
         self.empty = True
 
         # Check if it is user's first time using app
@@ -330,7 +338,7 @@ class ScreenManage(ScreenManager):
         if self.empty == True:
             self.add_widget(self.start)
 
-        self.add_widget(self.menu)
+        self.add_widget(menu)
         self.add_widget(self.anno)
         self.add_widget(self.inst1)
         self.add_widget(self.tutorial1)
@@ -343,28 +351,32 @@ class ScreenManage(ScreenManager):
 # Create Menu Screen
 class MenuScreen(Screen):
     def __init__(self):
+        global username
         Screen.__init__(self, name='menu')
 
         # Create Box Layout for the screen
         self.box_layout = BoxLayout(orientation='vertical')
         # Create Grid Layout for the buttons and title/image
-        self.grid_layout_title = GridLayout(cols=1, padding=Window.height/50)
-        self.grid_layout_buttons = GridLayout(cols=1, padding=(Window.width/3, 20), size_hint=(1, 0.5),
-                                              spacing=10)
+        self.grid_layout_title = GridLayout(cols=1)
+        self.grid_layout_buttons = GridLayout(cols=1, padding=(Window.width/3, 10), size_hint=(1, 0.5),
+                                              spacing=5)
         # Navigation buttons
         self.start_button = SwitchButton(text='Start')
         self.instruct_button = SwitchButton(text='Instructions')
         self.tutorial_button = SwitchButton(text='Tutorial')
         self.user_button = SwitchButton(text='User Profile')
+        # Welcome label
+        self.welcome_label = TextLabel(text='Welcome ' + username + '!')
         # Bind screen switching functions to buttons
         self.start_button.bind(on_release=self.anno_screen)
         self.instruct_button.bind(on_press=self.inst_screen)
         self.tutorial_button.bind(on_press=self.tutorial_screen)
         self.user_button.bind(on_press=self.user_screen)
         # Menu image
-        self.pic = Image(source='fecg_logo.png')
+        self.pic = Image(source='fecg_logo.png', size_hint=(0.6, 0.6))
 
         # Add widgets to grid layout
+        self.grid_layout_buttons.add_widget(self.welcome_label)
         self.grid_layout_buttons.add_widget(self.instruct_button)
         self.grid_layout_buttons.add_widget(self.tutorial_button)
         self.grid_layout_buttons.add_widget(self.start_button)
@@ -1018,7 +1030,7 @@ class StartScreen(Screen):
     def __init__(self):
         Screen.__init__(self, name='start')
 
-        # Create boxlayout to house widgets
+        # Create box layout to house widgets
         self.box_layout = BoxLayout(orientation='vertical')
         # Create grid layout to house username label and text box
         self.grid_layout_usr = GridLayout(cols=2, padding=(Window.width / 5, 50),
@@ -1044,15 +1056,19 @@ class StartScreen(Screen):
 
     def menu_screen(self, *args):
         """Switch to menu screen on button press and writes user data to user_score.csv"""
-        global username
+        global username, user_id
         self.manager.current = 'menu'
         self.manager.transition.direction = 'left'
+        # Create user id for tracking stats
+        user_id = randint(0, 99999) # When database is deployed add in check to ensure no ids are the same
         # Set username to text entered by user
         username = self.text_box_usr.text
+        # Display welcome message after first launch
+        menu.welcome_label.text = 'Welcome ' + username + '!'
         # Write username to csv file
         with open('user_score.csv', mode='a', newline='') as score_data:
             writer = csv.writer(score_data)
-            writer.writerow(['',username,'','', ''])
+            writer.writerow(['', user_id, '', '', '', username])
 
 
 class UserScreen(Screen):
@@ -1061,23 +1077,27 @@ class UserScreen(Screen):
         # Create box layout to hold image and grid layouts
         self.box_layout = BoxLayout(orientation='vertical')
         # Create grid layout to hold user stats
-        self.grid_layout = GridLayout(cols=2, padding=(Window.width/5, 50), spacing=(Window.width/30, Window.height/12))
+        self.grid_layout = GridLayout(cols=2, padding=(Window.width/5, 50), spacing=(Window.width/30, Window.height/25))
         # Create grid layout to hold and format button
-        self.grid_layout_button = GridLayout(cols=1, padding=(Window.width/2.5, Window.height/20),
+        self.grid_layout_button = GridLayout(cols=2, padding=(Window.width/4, Window.height/20),
                                              spacing=(Window.width/20, Window.height/20), size_hint_y=0.5)
         # Create image and text widgets
         self.image = Image(source='icon.png')
         self.username_label = TextLabel(text='Username:')
         self.usr = TextLabel()
-        self.text_box_usr = TextInput(multiline=False, cursor_color=(0, 0, 128, 1), hint_text='Enter Username')
+        self.text_box_usr = TextInput(multiline=False, cursor_color=(0, 0, 128, 1), hint_text='Please Enter a Username')
         self.totals = TextLabel(text='Total Annotations:')
         self.tot = TextLabel()
         self.ranking = TextLabel(text='Overall Ranking:')
         self.rnk = TextLabel()
         self.text_box_usr.bind(on_text_validate=self.on_enter)
         self.menu_button = SwitchButton(text='Menu')
+        self.change_username_button = SwitchButton(text='Change \n Username', halign='center')
+        self.save_changes_button = SwitchButton(text='Save \n Changes', halign='center')
         # Bind switching function to button
         self.menu_button.bind(on_press=self.menu_screen)
+        self.change_username_button.bind(on_press=self.change_username)
+        self.save_changes_button.bind(on_press=self.save_changes)
         # Add widgets to grid layouts
         self.grid_layout.add_widget(self.username_label)
         self.grid_layout.add_widget(self.usr)
@@ -1086,6 +1106,7 @@ class UserScreen(Screen):
         self.grid_layout.add_widget(self.ranking)
         self.grid_layout.add_widget(self.rnk)
         self.grid_layout_button.add_widget(self.menu_button)
+        self.grid_layout_button.add_widget(self.change_username_button)
         # Add widgets to box layout
         self.box_layout.add_widget(self.image)
         self.box_layout.add_widget(self.grid_layout)
@@ -1097,6 +1118,37 @@ class UserScreen(Screen):
         """Switches current screen to menu screen on button press"""
         self.manager.current = 'menu'
         self.manager.transition.direction = 'right'
+
+    def change_username(self, *args):
+        """Allows user to change their username"""
+        # Remove old menu screen username label
+        self.grid_layout.remove_widget(self.usr)
+        # Add textbox for user to type in their new username
+        self.grid_layout.add_widget(self.text_box_usr, index=4)
+        # Remove 'change username' button and add 'save changes' button
+        self.grid_layout_button.remove_widget(self.change_username_button)
+        self.grid_layout_button.add_widget(self.save_changes_button)
+
+
+    def save_changes(self, *args):
+        """Saves new username in csv and changes appropriate widgets"""
+        global username, menu
+        # Get username typed by user
+        username = self.text_box_usr.text
+        # Remove text box
+        self.grid_layout.remove_widget(self.text_box_usr)
+        # Add in label with new username
+        self.grid_layout.add_widget(self.usr, index=4)
+        self.usr.text = username
+        # Change button back to 'Change username' button
+        self.grid_layout_button.remove_widget(self.save_changes_button)
+        self.grid_layout_button.add_widget(self.change_username_button)
+        # Reset welcome label on menu screen with new username
+        menu.welcome_label.text = 'Welcome ' + username +'!'
+        # Write new username in user_scores.csv file
+        with open('user_score.csv', mode='a', newline='') as score_data:
+            writer = csv.writer(score_data)
+            writer.writerow(['', user_id, '', '', '', username])
 
 
 # Create app class
