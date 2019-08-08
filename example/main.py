@@ -1,7 +1,7 @@
 from kivy.app import App
 from kivy.uix.image import Image
 from kivy.uix.button import Button
-from kivy.uix.dropdown import DropDown
+from kivy.uix.textinput import TextInput
 from kivy.properties import StringProperty
 from kivy.uix.behaviors import DragBehavior
 from kivy.uix.gridlayout import GridLayout
@@ -18,22 +18,22 @@ from os.path import join, dirname
 import csv
 from math import sqrt
 import ntpath
+import datetime
 
+# Store username in global variable
+username = None
+# Store user screen in global variable to access username after user enters it for first time
+user = None
+# Store how many annotations completed by user
+total_annos = 0
+total_counter = 0
+# Store lifetime ranking of user
+total_ranking = 0
+avg_ranking = 0
 
 # Create an image class that supports drag behaviors
 class DragImage(DragBehavior, Image):
     pass
-
-
-# Create drop down menu class
-class DropDownMenu(DropDown):
-    def __init__(self):
-        DropDown.__init__(self, auto_dismiss=False)
-        self.menu_button = SwitchButton(text='menu', size_hint_y=None)
-        self.example_button = SwitchButton(text='Instructions', size_hint_y=None)
-
-        self.add_widget(self.menu_button)
-        self.add_widget(self.example_button)
 
 
 # Buttons to switch between screens
@@ -65,22 +65,25 @@ def calculate_dist(x1, y1, x2, y2):
 
 # Drag image and score recording class
 class Container(BoxLayout):
+    # Create property to record user score and display label on screen in real time
     label_text = StringProperty('')
     # Change Window Background color
     Window.clearcolor = (1, 1, 1, 1)
 
     def __init__(self):
-
+        global username, total_annos, total_ranking, avg_ranking, total_counter
         # call the __init__ of the parent class once
         BoxLayout.__init__(self, orientation='vertical')
         # Initialize counter to track how many pictures are done in each grouping
         self.counter = 1
         # Initialize counter to track how many pictures are done in the entire annotation session
-        self.total_counter = 1
+        total_counter = 1
+        # Create variable to store current date
+        self.date = datetime.datetime.now()
         # Create list to house pictures
         self.pictures = []
+        # Create variable to store machine score of signals
         self.machine_score = float()
-
         # Store file directory in a variable
         curdir = dirname(__file__)
         # Add all pictures in the 'Images' folder to the pictures list
@@ -91,8 +94,16 @@ class Container(BoxLayout):
         with open('user_score.csv', mode='r') as score_data:
             reader = csv.reader(score_data)
             for row in reader:
+                # Get user's username
+                username = row[1]
+                # Get user's total amount of annotations completed
+                if row[3] != '':
+                    total_annos = total_annos + 1
+                # Get user's total ranking (compared to machine learning score for signal)
+                if row[4] != '':
+                    total_ranking = total_ranking + float(row[4])
                 for pic in self.pictures:
-                    if row[0] == ntpath.basename(pic):
+                    if row[2] == ntpath.basename(pic):
                         self.pictures.remove(pic)
 
         # Check if there are still pictures left to annotate
@@ -108,9 +119,8 @@ class Container(BoxLayout):
             self.float_layout = FloatLayout()
             self.grid_layout_scores = GridLayout(cols=2,size_hint=(0.5, 0.2), spacing=10)
             self.grid_layout_ranking = GridLayout(cols=2,size_hint=(0.5, 0.2), spacing=100)
-            self.grid_layout_top = GridLayout(cols=4, size_hint=(1, 0.2),
-                                                 padding=(50, 0), spacing=(Window.width/15, 0),
-                                                 pos=(20, Window.height*0.8))
+            self.grid_layout_top = GridLayout(cols=4, size_hint=(1, 0.2), padding=(50, 0), spacing=(Window.width/15, 0),
+                                              pos=(20, Window.height*0.8))
             self.display = DragImage(source=self.current, drag_rect_width=Window.width, drag_rect_height=Window.height)
             # Set initial progress of progress bar
             self.pb.value = self.prog_max - len(self.pictures) - 1
@@ -173,7 +183,7 @@ class Container(BoxLayout):
     def on_touch_up(self, touch):
         """Calculate the user score based on the direction of their touch and ensure the movement was big enough"""
         super(Container, self).on_touch_up(touch)
-
+        global total_ranking
         try:
             self.coord.append(touch.x)
             self.coord.append(touch.y)
@@ -182,11 +192,8 @@ class Container(BoxLayout):
 
             # Check if drag movement is big enough
             if dist > min_dist and dx > Window.width / 5:
-                # Assign score based on drag direction
-                self.change_image(score=self.score_val)
-
                 # Assign ranking based on comparison to machine learning score
-                self.ranking = abs(self.score_val -float(self.machine_score))
+                self.ranking = abs(self.score_val - float(self.machine_score))
                 if self.ranking < 0.1:
                     self.machine_score_label.text = 'Excellent!'
                 elif self.ranking < 0.2:
@@ -197,6 +204,10 @@ class Container(BoxLayout):
                     self.machine_score_label.text = 'OK!'
                 elif self.ranking < 0.5:
                     self.machine_score_label.text = 'Not Quite!'
+                total_ranking = total_ranking + self.ranking
+                # Assign score based on drag direction
+                self.prev_pictures.append(self.current)
+                self.change_image(score=self.score_val)
 
             # Recenter display picture if drag is too small
             else:
@@ -208,17 +219,13 @@ class Container(BoxLayout):
 
     def change_image(self, score=None):
         """Change the displayed image and write the filename and score to score.csv"""
-
+        global total_counter
         try:
-            print(self.pictures)
-            print(self.current)
-            print(self.prev_pictures)
-
-
             # Write picture name and score to csv
             with open('user_score.csv', mode='a', newline='') as score_data:
                 writer = csv.writer(score_data)
-                writer.writerow([ntpath.basename(self.current), score])
+                writer.writerow([self.date.strftime("%d-%m-%Y"), username, ntpath.basename(self.current), score,
+                                 self.ranking])
 
             # Find score assigned by machine learner
             with open('machine_score.csv', mode='r') as machine:
@@ -244,12 +251,13 @@ class Container(BoxLayout):
             self.add_widget(self.end_label_2)
 
         # Ask user if they want to continue annotating after a certain amount of pictures
-        elif self.counter == 9:
+
+        elif self.counter == 20:
             # Remove display widget
             self.float_layout.remove_widget(self.display)
             # Create label to display continue message
             self.cont_label = TextLabel(text='Do you want to continue? '
-                                             '\n You\'ve annotated ' + str(self.total_counter)
+                                             '\n You\'ve annotated ' + str(total_counter)
                                              + ' signals this session!')
             # Create continue button
             self.cont_button = SwitchButton(text='Continue',size_hint=(0.2, 0.2))
@@ -264,7 +272,6 @@ class Container(BoxLayout):
 
         else:
             # Move to next picture
-            self.prev_pictures.append(self.current)
             self.current = self.pictures.pop(0)
             self.display.center = self.center
             self.display.source = self.current
@@ -272,13 +279,9 @@ class Container(BoxLayout):
             self.score.text = ''
             # Increase counters
             self.counter = self.counter + 1
-            self.total_counter = self.total_counter + 1
+            total_counter = total_counter + 1
             # Update progress bar
             self.pb.value = self.prog_max - len(self.pictures) - 1
-            print(self.pictures)
-            print(self.current)
-            print(self.prev_pictures)
-
 
 
     def update_label(self, label, touch):
@@ -306,13 +309,27 @@ class Container(BoxLayout):
 class ScreenManage(ScreenManager):
     def __init__(self):
         ScreenManager.__init__(self)
+        global user
         self.menu = MenuScreen()
         self.anno = AnnotateScreen()
         self.inst1 = InstructionScreen()
-        self.tutorial1 = TutorialScreen_1()
-        self.tutorial2 = TutorialScreen_2()
+        self.tutorial1 = TutorialScreen1()
+        self.tutorial2 = TutorialScreen2()
         self.tutorialend = TutorialEndScreen()
         self.example = ExampleScreen()
+        user = UserScreen()
+        self.start = StartScreen()
+        self.empty = True
+
+        # Check if it is user's first time using app
+        with open('user_score.csv', mode='r') as score_data:
+            reader = csv.reader(score_data)
+            for row in reader:
+                if row != '':
+                    self.empty = False
+        if self.empty == True:
+            self.add_widget(self.start)
+
         self.add_widget(self.menu)
         self.add_widget(self.anno)
         self.add_widget(self.inst1)
@@ -320,6 +337,7 @@ class ScreenManage(ScreenManager):
         self.add_widget(self.tutorial2)
         self.add_widget(self.tutorialend)
         self.add_widget(self.example)
+        self.add_widget(user)
 
 
 # Create Menu Screen
@@ -331,16 +349,18 @@ class MenuScreen(Screen):
         self.box_layout = BoxLayout(orientation='vertical')
         # Create Grid Layout for the buttons and title/image
         self.grid_layout_title = GridLayout(cols=1, padding=Window.height/50)
-        self.grid_layout_buttons = GridLayout(cols=1, padding=(Window.width * 0.375, 30), size_hint=(1, 0.5),
+        self.grid_layout_buttons = GridLayout(cols=1, padding=(Window.width/3, 20), size_hint=(1, 0.5),
                                               spacing=10)
         # Navigation buttons
         self.start_button = SwitchButton(text='Start')
         self.instruct_button = SwitchButton(text='Instructions')
         self.tutorial_button = SwitchButton(text='Tutorial')
+        self.user_button = SwitchButton(text='User Profile')
         # Bind screen switching functions to buttons
         self.start_button.bind(on_release=self.anno_screen)
         self.instruct_button.bind(on_press=self.inst_screen)
         self.tutorial_button.bind(on_press=self.tutorial_screen)
+        self.user_button.bind(on_press=self.user_screen)
         # Menu image
         self.pic = Image(source='fecg_logo.png')
 
@@ -348,6 +368,7 @@ class MenuScreen(Screen):
         self.grid_layout_buttons.add_widget(self.instruct_button)
         self.grid_layout_buttons.add_widget(self.tutorial_button)
         self.grid_layout_buttons.add_widget(self.start_button)
+        self.grid_layout_buttons.add_widget(self.user_button)
         self.grid_layout_title.add_widget(self.pic)
         self.box_layout.add_widget(self.grid_layout_title)
         self.box_layout.add_widget(self.grid_layout_buttons)
@@ -367,6 +388,25 @@ class MenuScreen(Screen):
         """Change screen to tutorial screen"""
         self.manager.current = 'tutorial1'
         self.manager.transition.direction = 'left'
+
+    def user_screen(self, *args):
+        """Change screen to user profile screen and updates user stats"""
+        global user, username, total_ranking, total_annos, avg_ranking
+        self.manager.current = 'user'
+        self.manager.transition.direction = 'left'
+        # Set username
+        user.usr.text = username
+        # Update total annotations to include those from current session
+        total_annos = total_annos + total_counter - 1
+        # Update total annotations label
+        user.tot.text = str(total_annos)
+        try:
+            # Calculate user's lifetime ranking (compared to machine learning score for signal)
+            avg_ranking = str(100- int((total_ranking / total_annos) * 100)) + '%'
+        except ZeroDivisionError:
+            return
+        # Update user ranking label
+        user.rnk.text = str(avg_ranking)
 
 
 # Annotation game screen
@@ -403,6 +443,9 @@ class AnnotateScreen(Screen):
         # Add box widget to screen
         self.add_widget(self.box_layout)
 
+    def cont_screen(self, *args):
+        self.manager.current = 'continue'
+        self.manager.transition.direction = 'right'
     def menu_screen(self, *args):
         """Change screen to menu screen"""
         self.manager.current = 'menu'
@@ -418,6 +461,7 @@ class AnnotateScreen(Screen):
         # Check if user is on the last picture
         if len(self.cont.pictures) > 0:
             # Record the current picture
+            self.cont.prev_pictures.append(self.cont.current)
             # Skip to the next picture
             self.cont.change_image()
             # Increment the progress bar
@@ -428,16 +472,17 @@ class AnnotateScreen(Screen):
         try:
             # Check if user is on the last picture
             if len(self.cont.pictures) > 0:
-                self.cont.pictures.insert(0,self.cont.current)
+                self.cont.pictures.insert(0, self.cont.current)
                 # Insert previous picture in the pictures list
                 self.cont.pictures.insert(0, self.cont.prev_pictures.pop(-1))
-                # Change to the previous picture
-                self.cont.change_image()
                 # Decrease the progress bar
                 self.cont.pb.value = self.cont.pb.value - 1
                 # Decrease counters
                 self.cont.counter = self.cont.counter - 1
                 self.cont.total_counter = self.cont.total_counter - 1
+                # Change to the previous picture
+                self.cont.change_image()
+
         except IndexError:
             return
 
@@ -566,8 +611,7 @@ class InstructionScreen(Screen):
         self.back_button.bind(on_press=self.page_2)
 
 
-
-class TutorialScreen_1(Screen):
+class TutorialScreen1(Screen):
     def __init__(self):
         Screen.__init__(self, name='tutorial1')
         # Create box layout to house widgets
@@ -607,7 +651,7 @@ class TutorialScreen_1(Screen):
         self.manager.transition.direction = 'left'
 
 
-class TutorialScreen_2(Screen):
+class TutorialScreen2(Screen):
     def __init__(self):
         Screen.__init__(self, name='tutorial2')
         # Create list variable to store pictures and solutions
@@ -699,7 +743,7 @@ class TutorialScreen_2(Screen):
     # Record initial down click coordinates
     def on_touch_down(self, touch):
         """Record the initial coordinates of the user touch"""
-        super(TutorialScreen_2, self).on_touch_down(touch)
+        super(TutorialScreen2, self).on_touch_down(touch)
 
         self.coord = []
         self.coord.append(touch.x)
@@ -713,7 +757,7 @@ class TutorialScreen_2(Screen):
 
     def on_touch_move(self, touch):
         """ Update the user score of the signal in real time as their touch is moving"""
-        super(TutorialScreen_2, self).on_touch_move(touch)
+        super(TutorialScreen2, self).on_touch_move(touch)
 
         try:
             self.update_label(self.score, touch)
@@ -723,7 +767,7 @@ class TutorialScreen_2(Screen):
 
     def on_touch_up(self, touch):
         """Calculate the user score based on the direction of their touch and ensure the movement was big enough"""
-        super(TutorialScreen_2, self).on_touch_up(touch)
+        super(TutorialScreen2, self).on_touch_up(touch)
 
         try:
             self.coord.append(touch.x)
@@ -923,6 +967,7 @@ class TutorialEndScreen(Screen):
         self.manager.current = 'menu'
         self.manager.transition.direction = 'right'
 
+
 # Example screen accessed during anno game from anno screen
 class ExampleScreen(Screen):
     def __init__(self):
@@ -969,6 +1014,91 @@ class ExampleScreen(Screen):
         self.manager.transition.direction = 'right'
 
 
+class StartScreen(Screen):
+    def __init__(self):
+        Screen.__init__(self, name='start')
+
+        # Create boxlayout to house widgets
+        self.box_layout = BoxLayout(orientation='vertical')
+        # Create grid layout to house username label and text box
+        self.grid_layout_usr = GridLayout(cols=2, padding=(Window.width / 5, 50),
+                                          spacing=(Window.width / 30, Window.height / 12), size_hint_y=0.4)
+        self.grid_layout_button = GridLayout(cols=1, padding=(Window.width/2.5, Window.height/20),
+                                             spacing=(Window.width/20, Window.height/20), size_hint_y=0.3)
+        # Create start screen widgets
+        self.image = Image(source='fecg_logo.png')
+        self.username_label = TextLabel(text='Username:')
+        self.text_box_usr = TextInput(multiline=False, cursor_color=(0, 0, 128, 1), hint_text='Please Enter a Username')
+        self.menu_button = SwitchButton(text='Menu', size_hint=(0.2, 0.5))
+        self.menu_button.bind(on_press=self.menu_screen)
+        # Add username widgets to grid layout
+        self.grid_layout_usr.add_widget(self.username_label)
+        self.grid_layout_usr.add_widget(self.text_box_usr)
+        self.grid_layout_button.add_widget(self.menu_button)
+        # Add widgets to box layout
+        self.box_layout.add_widget(self.image)
+        self.box_layout.add_widget(self.grid_layout_usr)
+        self.box_layout.add_widget(self.grid_layout_button)
+        # Add box layout to screen
+        self.add_widget(self.box_layout)
+
+    def menu_screen(self, *args):
+        """Switch to menu screen on button press and writes user data to user_score.csv"""
+        global username
+        self.manager.current = 'menu'
+        self.manager.transition.direction = 'left'
+        # Set username to text entered by user
+        username = self.text_box_usr.text
+        # Write username to csv file
+        with open('user_score.csv', mode='a', newline='') as score_data:
+            writer = csv.writer(score_data)
+            writer.writerow(['',username,'','', ''])
+
+
+class UserScreen(Screen):
+    def __init__(self):
+        Screen.__init__(self, name='user')
+        # Create box layout to hold image and grid layouts
+        self.box_layout = BoxLayout(orientation='vertical')
+        # Create grid layout to hold user stats
+        self.grid_layout = GridLayout(cols=2, padding=(Window.width/5, 50), spacing=(Window.width/30, Window.height/12))
+        # Create grid layout to hold and format button
+        self.grid_layout_button = GridLayout(cols=1, padding=(Window.width/2.5, Window.height/20),
+                                             spacing=(Window.width/20, Window.height/20), size_hint_y=0.5)
+        # Create image and text widgets
+        self.image = Image(source='icon.png')
+        self.username_label = TextLabel(text='Username:')
+        self.usr = TextLabel()
+        self.text_box_usr = TextInput(multiline=False, cursor_color=(0, 0, 128, 1), hint_text='Enter Username')
+        self.totals = TextLabel(text='Total Annotations:')
+        self.tot = TextLabel()
+        self.ranking = TextLabel(text='Overall Ranking:')
+        self.rnk = TextLabel()
+        self.text_box_usr.bind(on_text_validate=self.on_enter)
+        self.menu_button = SwitchButton(text='Menu')
+        # Bind switching function to button
+        self.menu_button.bind(on_press=self.menu_screen)
+        # Add widgets to grid layouts
+        self.grid_layout.add_widget(self.username_label)
+        self.grid_layout.add_widget(self.usr)
+        self.grid_layout.add_widget(self.totals)
+        self.grid_layout.add_widget(self.tot)
+        self.grid_layout.add_widget(self.ranking)
+        self.grid_layout.add_widget(self.rnk)
+        self.grid_layout_button.add_widget(self.menu_button)
+        # Add widgets to box layout
+        self.box_layout.add_widget(self.image)
+        self.box_layout.add_widget(self.grid_layout)
+        self.box_layout.add_widget(self.grid_layout_button)
+        # Add box layout to screen
+        self.add_widget(self.box_layout)
+
+    def menu_screen(self, *args):
+        """Switches current screen to menu screen on button press"""
+        self.manager.current = 'menu'
+        self.manager.transition.direction = 'right'
+
+
 # Create app class
 class ScorePicturesApp(App):
     def build(self):
@@ -982,6 +1112,7 @@ class ScorePicturesApp(App):
     def on_resume(self):
         """Resume app when switching from another app"""
         return True
+
 
 # Run app
 if __name__ == '__main__':
