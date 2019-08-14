@@ -32,12 +32,12 @@ menu = None
 anno = None
 cont = None
 # Store how many annotations completed by user
-prev_annos = 0
 total_annos = 0
 total_counter = 0
 # Store lifetime ranking of user
-total_ranking = 0
 avg_ranking = 0
+# Create dictionary to store scores
+score_dict = {}
 
 # Create an image class that supports drag behaviors
 class DragImage(DragBehavior, Image):
@@ -70,6 +70,32 @@ def calculate_dist(x1, y1, x2, y2):
     min_dist = sqrt((Window.height / 5) ** 2 + (Window.width / 5) ** 2)
     return min_dist, dist, dx, dy
 
+def update_rankings():
+    """Updates username, total annotations, average ranking, and other user stats by reading csv file"""
+    global user, username, total_ranking, total_annos, avg_ranking
+    # Set username
+    user.usr.text = username
+    with open('user_score.csv', mode='r') as score_data:
+        reader = csv.reader(score_data)
+        for row in reader:
+            # Adds most recent scores from csv file
+            score_dict[row[2]] = (row[3], row[4])
+    del score_dict['']
+    # Get user's total amount of annotations completed
+    total_annos = len(score_dict)
+    # Get user's total ranking (compared to machine learning score for signal)
+    total_ranking = 0
+    for key in score_dict:
+        total_ranking = total_ranking + float(score_dict[key][1])
+    # Update total annotations label
+    user.tot.text = str(total_annos)
+    try:
+        # Calculate user's lifetime ranking (compared to machine learning score for signal)
+        avg_ranking = 100 - int((total_ranking / total_annos) * 100)
+    except ZeroDivisionError:
+        return
+    # Update user ranking label
+    user.rnk.text = str(avg_ranking) + '%'
 
 # Create Screen Manager to house different screens within the app
 class ScreenManage(ScreenManager):
@@ -87,7 +113,7 @@ class ScreenManage(ScreenManager):
         self.example = ExampleScreen()
         user = UserScreen()
         cont = ContScreen()
-        self.badge = BadgeScreen()
+        self.achievement = AchievementScreen()
 
         self.empty = True
 
@@ -109,7 +135,7 @@ class ScreenManage(ScreenManager):
         self.add_widget(self.example)
         self.add_widget(user)
         self.add_widget(cont)
-        self.add_widget(self.badge)
+        self.add_widget(self.achievement)
 
 
 class StartScreen(Screen):
@@ -164,11 +190,11 @@ class UserScreen(Screen):
         # Create box layout to hold image and grid layouts
         self.box_layout = BoxLayout(orientation='vertical')
         # Create grid layout to hold user stats
-        self.grid_layout = GridLayout(cols=2, padding=(Window.width/5, Window.height/11),
-                                      spacing=(Window.width/30, Window.height/25))
+        self.grid_layout = GridLayout(cols=2, padding=(Window.width/5, Window.height/10),
+                                      spacing=(Window.width/30, Window.height/20))
         # Create grid layout to hold and format button
-        self.grid_layout_button = GridLayout(cols=3, padding=(Window.width/10, Window.height/20),
-                                             spacing=(Window.width/20, Window.height/20), size_hint_y=0.5)
+        self.grid_layout_button = GridLayout(cols=3, padding=(Window.width/10, Window.height/30),
+                                             spacing=(Window.width/20, Window.height/15), size_hint_y=0.35)
         # Create image and text widgets
         self.image = Image(source='icon.png')
         self.username_label = TextLabel(text='Username:')
@@ -183,13 +209,13 @@ class UserScreen(Screen):
         self.menu_button = SwitchButton(text='Menu')
         self.change_username_button = SwitchButton(text='Change \n Username', halign='center')
         self.save_changes_button = SwitchButton(text='Save \n Changes', halign='center')
-        self.badge_button = SwitchButton(text='Badges')
+        self.badge_button = SwitchButton(text='Achievements')
         self.cancel_button = SwitchButton(text='Cancel')
         # Bind switching function to button
         self.menu_button.bind(on_press=self.menu_screen)
         self.change_username_button.bind(on_press=self.change_username)
         self.save_changes_button.bind(on_press=self.save_changes)
-        self.badge_button.bind(on_press=self.badge_screen)
+        self.badge_button.bind(on_press=self.achievement_screen)
         self.cancel_button.bind(on_press=self.cancel)
         # Add widgets to grid layouts
         self.grid_layout.add_widget(self.username_label)
@@ -270,9 +296,9 @@ class UserScreen(Screen):
             writer = csv.writer(score_data)
             writer.writerow(['', user_id, '', '', '', username])
 
-    def badge_screen(self, *args):
-        """Changes screen to badge screen and updates source photos and progress for badges"""
-        self.manager.current = 'badge'
+    def achievement_screen(self, *args):
+        """Changes screen to achievement screen and updates source photos and progress for badges"""
+        self.manager.current = 'achievement'
         self.manager.transition.direction = 'left'
 
 
@@ -285,7 +311,7 @@ class MenuScreen(Screen):
         self.box_layout = BoxLayout(orientation='vertical')
         # Create Grid Layout for the buttons and title/image
         self.grid_layout_title = GridLayout(cols=1)
-        self.grid_layout_buttons = GridLayout(cols=1, padding=(Window.width/3, 10), size_hint=(1, 0.5),
+        self.grid_layout_buttons = GridLayout(cols=1, padding=(Window.width/3, Window.height/30), size_hint=(1, 0.5),
                                               spacing=5)
         # Navigation buttons
         self.start_button = SwitchButton(text='Start')
@@ -322,23 +348,10 @@ class MenuScreen(Screen):
 
     def user_screen(self, *args):
         """Change screen to user profile screen and updates user stats"""
-        global user, username, total_ranking, total_annos, avg_ranking
         self.manager.current = 'user'
         self.manager.transition.direction = 'left'
-        # Set username
-        user.usr.text = username
-        # Update total annotations to include those from current session
-        total_annos = prev_annos + total_counter
-        # Update total annotations label
-        user.tot.text = str(total_annos)
-        try:
-            # Calculate user's lifetime ranking (compared to machine learning score for signal)
-            avg_ranking = 100 - int((total_ranking / total_annos) * 100)
-            print(avg_ranking)
-        except ZeroDivisionError:
-            return
-        # Update user ranking label
-        user.rnk.text = str(avg_ranking) + '%'
+        update_rankings()
+
 
 
 class AnnotateScreen(Screen):
@@ -349,12 +362,13 @@ class AnnotateScreen(Screen):
 
         # Change Window Background color
         Window.clearcolor = (1, 1, 1, 1)
-        global user_id, username, prev_annos, total_annos, total_ranking, avg_ranking, total_counter
+        global user_id, username, total_counter, score_dict
 
         # Initialize counter to track how many pictures are done in each grouping
         self.counter = 0
         # Initialize counter to track how many pictures are done in the entire annotation session
         total_counter = 0
+
         # Create variable to store current date
         self.date = datetime.datetime.now()
         # Create list to house pictures
@@ -376,12 +390,6 @@ class AnnotateScreen(Screen):
                 # Get user's username
                 if row[5] != '':
                     username = row[5]
-                # Get user's total amount of annotations completed
-                if row[3] != '':
-                    prev_annos = prev_annos + 1
-                # Get user's total ranking (compared to machine learning score for signal)
-                if row[4] != '':
-                    total_ranking = total_ranking + float(row[4])
                 for pic in self.pictures:
                     if row[2] == ntpath.basename(pic):
                         self.pictures.remove(pic)
@@ -523,7 +531,7 @@ class AnnotateScreen(Screen):
                     self.machine_score_label.text = 'OK!'
                 elif self.ranking < 0.5:
                     self.machine_score_label.text = 'Not Quite!'
-                total_ranking = total_ranking + self.ranking
+
                 # Assign score based on drag direction
 
                 self.change_image(score=self.score_val)
@@ -607,7 +615,6 @@ class AnnotateScreen(Screen):
         elif score > 0:
             label.color = (50, 0, 0, 1)
 
-
     def skip(self, *args):
         """Skip to the next picture to annotate"""
         # Check if user is on the last picture
@@ -625,8 +632,6 @@ class AnnotateScreen(Screen):
                 self.counter = self.counter + 1
             else:
                 self.counter = 14
-
-
 
     def undo(self, *args):
         """Go back to the previous picture to annotate"""
@@ -658,8 +663,8 @@ class AnnotateScreen(Screen):
             return
 
     def cont_screen(self, *args):
-        global cont, prev_annos, total_counter, total_annos, username
-        total_annos = prev_annos + total_counter
+        global cont,total_counter, total_annos, username
+        update_rankings()
         cont.label_1.text = 'Keep it up ' + username + '!'
         cont.anno_sess_label.text = str(total_counter)
         cont.anno_tot_label.text = str(total_annos)
@@ -902,7 +907,6 @@ class TutorialScreen2(Screen):
     def __init__(self):
         Screen.__init__(self, name='tutorial2')
         # Create list variable to store pictures and solutions
-
         self.pictures = []
         self.prev_pictures = []
         self.solutions = []
@@ -935,7 +939,7 @@ class TutorialScreen2(Screen):
         self.display = DragImage(source=self.current, drag_rect_width=Window.width, drag_rect_height=Window.height)
         self.image = Image(source=self.soln_current)
         # Create progress bar widget
-        self.pb = ProgressBar(max=5)
+        self.pb = ProgressBar(max=10)
         self.pb.value = self.counter
         # Create label to display the ranking comparing user score to machine score
         self.machine_score_label = TextLabel(text='')
@@ -1057,6 +1061,8 @@ class TutorialScreen2(Screen):
                     self.image.source = self.soln_current
                     self.grid_layout_top.remove_widget(self.empty_button)
                     self.grid_layout_top.add_widget(self.next_button)
+                    self.counter = self.counter + 1
+                    self.pb.value = self.counter
 
                 # Prevent crashing from drag on solution screen
                 except (WidgetException, IndexError):
@@ -1121,6 +1127,8 @@ class TutorialScreen2(Screen):
                 self.image.source = self.soln_current
                 self.grid_layout_top.remove_widget(self.empty_button)
                 self.grid_layout_top.add_widget(self.next_button)
+                self.counter = self.counter + 1
+                self.pb.value = self.counter
                 self.tracker = 'soln'
 
             # Increment the progress bar
@@ -1131,35 +1139,57 @@ class TutorialScreen2(Screen):
         # Check if user is on the last picture
         try:
             if len(self.solutions) > 0:
+                # Check if screen is on a 'solution' picture
                 if self.tracker == 'soln':
                     # Insert previous picture in the pictures list
                     self.pictures.insert(0, self.prev_pictures.pop(-1))
+                    # Insert previous solution in the solutions list
                     self.solutions.insert(0, self.soln_current)
+                    # Remove the solution picture
                     self.float_layout.remove_widget(self.image)
+                    # Add the new signal picture
                     self.current = self.pictures.pop(0)
                     self.display.source = self.current
                     self.float_layout.add_widget(self.display, index=2)
+                    # Remove the 'next button'
                     self.grid_layout_top.add_widget(self.empty_button)
                     self.grid_layout_top.remove_widget(self.next_button)
                     self.label.text = 'Try annotating this signal!'
-                    self.counter = self.counter - 1
+                    # Make sure counter does not go negative
+                    if self.counter > 0:
+                        self.counter = self.counter - 1
+                    else:
+                        self.counter = 0
+                    # Update progress bar
                     self.pb.value = self.counter
+                    # Change tracker to indicate it is now on a signal picture
                     self.tracker = 'signal'
+                # Check if screen is on a 'signal' picture
                 elif self.tracker == 'signal':
                     # Insert previous picture in the pictures list
                     self.solutions.insert(0, self.prev_soln.pop(-1))
                     self.pictures.insert(0, self.current)
+                    # Remove the signal picture
                     self.float_layout.remove_widget(self.display)
                     self.label.text = 'Compare your score to the \n suggested scoring and check \n your ranking!'
+                    # Add the solution picture
                     self.float_layout.add_widget(self.image, index=2)
                     self.soln_current = self.solutions.pop(0)
                     self.image.source = self.soln_current
+                    # Add the next button
                     self.grid_layout_top.remove_widget(self.empty_button)
                     self.grid_layout_top.add_widget(self.next_button)
+                    # Make sure counter does not go negative
+                    if self.counter > 0:
+                        self.counter = self.counter - 1
+                    else:
+                        self.counter = 0
+                    # Update the progress bar
+                    self.pb.value = self.counter
+                    # Change the tracker to indicate it is now on a solution picture
                     self.tracker = 'soln'
         except IndexError:
             return
-
 
     def next(self, *args):
         """Removes the solution image and re-adds the signal to annotate, updates the progress bar"""
@@ -1215,7 +1245,6 @@ class TutorialEndScreen(Screen):
         self.manager.transition.direction = 'right'
 
 
-# Example screen accessed during anno game from anno screen
 class ExampleScreen(Screen):
     def __init__(self):
         Screen.__init__(self, name='example')
@@ -1269,39 +1298,58 @@ class ExampleScreen(Screen):
         self.manager.transition.direction = 'right'
 
 
-class BadgeScreen(Screen):
+class AchievementScreen(Screen):
     def __init__(self):
-        Screen.__init__(self, name='badge')
+        Screen.__init__(self, name='achievement')
         global total_annos, avg_ranking
-
-        self.grid_layout = GridLayout(cols=2, spacing=(Window.width/20, Window.height/20), size_hint_y=None,
-                                      padding=Window.width/30)
+        # Create grid layouts
+        self.grid_layout = GridLayout(cols=1, spacing=(Window.width/20,0), size_hint_y=None,
+                                      padding=Window.width/50)
+        self.grid_layout_btn = GridLayout(cols=2, size_hint_y=None, padding=(0, Window.height/25),
+                                          spacing=Window.width/3)
+        self.grid_layout_img = GridLayout(cols=2, size_hint_y=None, height=Window.height*2)
         # Make sure the height is such that there is something to scroll.
         self.grid_layout.bind(minimum_height=self.grid_layout.setter('height'))
-
-        # Create image widgets for badges
+        # Create back button
+        self.back_button = SwitchButton(text='Back', size_hint=(0.3, 0.1))
+        self.empty = Label(text='Achievements', color=(0, 0, 128, 1), bold=True, font_size=Window.height/12,
+                           halign='right')
+        # Bind switching function to back button
+        self.back_button.bind(on_press=self.back)
+        # Create image widgets for achievements
         self.anno_badge = Image(source='trophy.png', size_hint_y=None, height=Window.height / 2)
         self.ranking_badge = Image(source='trophy.png', size_hint_y=None, height=Window.height / 2)
         self.excellent_badge = Image(source='trophy.png', size_hint_y=None, height=Window.height / 2)
         self.streak_badge = Image(source='trophy.png', size_hint_y=None, height=Window.height / 2)
         # Create label widgets for badges
-        self.anno_label = TextLabel(text='Lifetime number of annotations')
-        self.ranking_label = TextLabel(text='Lifetime ranking percentage')
-        self.excellent_label = TextLabel(text='Lifetime number of "Excellent" rankings')
-        self.streak_label = TextLabel(text='Number of days annotated in a row')
+        self.anno_label = TextLabel(text='Most Dedicated Player')
+        self.ranking_label = TextLabel(text='Honour Roll')
+        self.excellent_label = TextLabel(text='Admirable Annotator')
+        self.streak_label = TextLabel(text='Repeat Offender')
+        # Add buttons to grid layout
+        self.grid_layout_btn.add_widget(self.back_button)
+        self.grid_layout_btn.add_widget(self.empty)
         # Add images to grid layout
-        self.grid_layout.add_widget(self.anno_badge)
-        self.grid_layout.add_widget(self.anno_label)
-        self.grid_layout.add_widget(self.ranking_badge)
-        self.grid_layout.add_widget(self.ranking_label)
-        self.grid_layout.add_widget(self.excellent_badge)
-        self.grid_layout.add_widget(self.excellent_label)
-        self.grid_layout.add_widget(self.streak_badge)
-        self.grid_layout.add_widget(self.streak_label)
+        self.grid_layout_img.add_widget(self.streak_badge)
+        self.grid_layout_img.add_widget(self.streak_label)
+        self.grid_layout_img.add_widget(self.anno_badge)
+        self.grid_layout_img.add_widget(self.anno_label)
+        self.grid_layout_img.add_widget(self.ranking_badge)
+        self.grid_layout_img.add_widget(self.ranking_label)
+        self.grid_layout_img.add_widget(self.excellent_badge)
+        self.grid_layout_img.add_widget(self.excellent_label)
+
+        # Add images to grid layout
+        self.grid_layout.add_widget(self.grid_layout_btn)
+        self.grid_layout.add_widget(self.grid_layout_img)
 
         self.scroll = ScrollView(size_hint=(1, None), size=(Window.width, Window.height))
         self.scroll.add_widget(self.grid_layout)
         self.add_widget(self.scroll)
+
+    def back(self, *args):
+        self.manager.current = 'user'
+        self.manager.transition.direction = 'right'
 
 
 # Create app class
