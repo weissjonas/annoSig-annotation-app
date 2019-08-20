@@ -2,7 +2,6 @@ from kivy.app import App
 from kivy.uix.image import Image
 from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
-from kivy.properties import StringProperty, ListProperty
 from kivy.uix.behaviors import DragBehavior
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
@@ -14,9 +13,8 @@ from kivy.uix.progressbar import ProgressBar
 from kivy.uix.widget import WidgetException
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.popup import Popup
-from kivy.uix.filechooser import FileChooserListView, FileChooser, FileChooserIconView
 from kivy.graphics import Rectangle, Color, Point, GraphicException
-from kivy.uix.colorpicker import ColorPicker
+from kivy.clock import Clock
 from glob import glob
 from os.path import join, dirname
 from random import randint
@@ -24,6 +22,7 @@ import csv
 from math import sqrt
 import ntpath
 import datetime
+from functools import partial
 
 
 # Store user_id and username in global variable
@@ -141,7 +140,6 @@ class ScreenManage(ScreenManager):
         user = UserScreen()
         cont = ContScreen()
         achievement = AchievementScreen()
-        self.file = FileScreen()
         settings = SettingsScreen()
         self.leaderboard = LeaderboardScreen()
 
@@ -166,7 +164,6 @@ class ScreenManage(ScreenManager):
         self.add_widget(user)
         self.add_widget(cont)
         self.add_widget(achievement)
-        self.add_widget(self.file)
         self.add_widget(settings)
         self.add_widget(self.leaderboard)
 
@@ -218,36 +215,6 @@ class StartScreen(Screen):
                 writer.writerow(['', user_id, '', '', '', username])
         else:
             return
-
-
-class FileScreen(Screen):
-    def __init__(self):
-        global image
-        Screen.__init__(self, name='file')
-        with self.canvas.before:
-            Color(0, 0, 0, 1)
-            Rectangle(size=Window.size)
-
-        self.box = BoxLayout()
-        # Create a filechooser widget
-        self.filechooser = FileChooserListView(filters=['*.png', '*.jpg'], path='/storage/emmc/DCIM')
-        self.box.add_widget(self.filechooser)
-        self.button = SwitchButton(text='ok')
-        self.label = Label()
-        self.box.add_widget(self.label)
-        self.box.add_widget(self.button)
-        self.add_widget(self.box)
-
-
-        self.button.bind(on_press=lambda x:self.press(path=self.filechooser.path, filename=self.filechooser.selection))
-
-    def selected(self, selection):
-        print(selection)
-
-    def press(self, path, filename):
-        print(path)
-        print(filename)
-        self.label.text = path
 
 
 class UserScreen(Screen):
@@ -519,40 +486,52 @@ class AnnotateScreen(Screen):
             return True
 
         with self.display.canvas:
-            color = self.update_line_color(touch)
-            Color(*color, group='group')
-            lines = [Point(points=(touch.x, touch.y), pointsize=15, group='group')]
+
+            Color(*[0, 0, 128, 0.05])
+            line = Point(points=(touch.x, touch.y), pointsize=Window.height/30, group='g')
+            lines = line.points
+            Clock.schedule_once(partial(self.remove_point, group='g'), 0.3)
+            self.groups = ['g']
 
         touch.grab(self)
         return True
 
+    def remove_point(self, *args, **kwargs):
+        group=kwargs['group']
+        self.display.canvas.remove_group(group)
 
 
     def on_touch_move(self, touch):
         """ Update the user score of the signal in real time as their touch is moving"""
         super(AnnotateScreen, self).on_touch_move(touch)
         global lines
-        index = -1
 
         while True:
-            try:
-                points = lines[index].points
-                oldx, oldy = points[-2], points[-1]
+                oldx, oldy = lines[-2], lines[-1]
                 break
-            except:
-                index -= 1
         points = line_dist(oldx, oldy, touch.x, touch.y)
+
         if points:
             try:
-                lp = lines[-1].add_point
                 for idx in range(0, len(points), 2):
-                    lp(points[idx], points[idx + 1])
+                    group = randint(0,999999)
+                    with self.display.canvas:
+                        Color(*[0, 0, 128, 0.05])
+                        Point(points=(points[idx], points[idx+1]), pointsize=Window.height/30, group=str(group))
+
+                    lines.append(points[idx])
+                    lines.append(points[idx + 1])
+
+                    Clock.schedule_once(partial(self.remove_point, group=str(group)), 0.3)
+                    self.groups.append(str(group))
+
             except GraphicException:
                 pass
 
+
         try:
             self.update_label(self.score, touch)
-            self.update_line_color(touch)
+
         # Avoid app crashing from user touch on end screen
         except AttributeError:
             return
@@ -565,7 +544,10 @@ class AnnotateScreen(Screen):
         if touch.grab_current is not self:
             return
         touch.ungrab(self)
-        self.display.canvas.remove_group('group')
+
+        for group in self.groups:
+            self.display.canvas.remove_group(group)
+
 
         try:
             self.coord.append(touch.x)
@@ -671,12 +653,6 @@ class AnnotateScreen(Screen):
             label.color = (5, 50, 0, 1)
         elif score > 0:
             label.color = (50, 0, 0, 1)
-
-    def update_line_color(self, touch):
-        color = line_color
-        color[3] = 0.05
-
-        return color
 
     def skip(self, *args):
         """Skip to the next picture to annotate"""
