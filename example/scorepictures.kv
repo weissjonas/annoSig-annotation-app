@@ -1,0 +1,103 @@
+#:import Window kivy.core.window.Window
+#:import update_rankings main.update_rankings
+
+<InstructionScreen1>:
+    name: 'inst1'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: (20, 0)
+        TextLabel:
+            text: 'Layout of Annotation Screen'
+            size_hint: (1, 0.2)
+        Image:
+            source: 'tut_1.png'
+        GridLayout:
+            cols: 3
+            rows: 1
+            size_hint: (1, 0.15)
+            padding: (Window.width/50, 10)
+            spacing: (Window.width/5, 10)
+            SwitchButton:
+                id:'menu_button'
+                text: 'Menu'
+                size_hint_x: 0.2
+                on_press:
+                    root.manager.current = 'menu'
+                    root.manager.transition.direction = 'right'
+            Label:
+                size_hint_x: 0.2
+            SwitchButton:
+                id:'next_button'
+                text: 'Next'
+                size_hint_x: 0.2
+                on_press:
+                    root.manager.current = 'inst2'
+                    root.manager.transition.direction = 'left'
+
+<InstructionScreen2>:
+    name: 'inst2'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: (20, 0)
+        TextLabel:
+            text: 'Annotate the signal by swiping it to the right of the screen and assigning it a score'
+            text_size: (self.width, None)
+            size_x: Window.width
+            size_hint: (1, 0.2)
+        Image:
+            source: 'tut_2.png'
+        GridLayout:
+            cols: 3
+            rows: 1
+            size_hint: (1, 0.15)
+            padding: (Window.width/50, 10)
+            spacing: (Window.width/5, 10)
+            SwitchButton:
+                id:'menu_button'
+                text: 'Menu'
+                size_hint_x: 0.2
+                on_press:
+                    root.manager.current = 'menu'
+                    root.manager.transition.direction = 'right'
+            SwitchButton:
+                id: 'back_button'
+                text: 'Back'
+                size_hint_x: 0.2
+                on_press:
+                    root.manager.current = 'inst1'
+                    root.manager.transition.direction = 'left'
+
+            SwitchButton:
+                id:'next_button'
+                text: 'Start \n Tutorial'
+                size_hint_x: 0.2
+                on_press:
+                    root.manager.current = 'tutorial'
+                    root.manager.transition.direction = 'left'
+
+
+
+
+<SwitchButton>:
+    background_normal: 'navy.png'
+    background_down: 'pressed.png'
+    font_size: Window.height*0.035
+    bold: 'True'
+    halign: 'center'
+
+<TextLabel>:
+    font_size: Window.height/20
+    color: (0, 0, 128, 1)
+    halign: 'center'
+    bold: True
+    padding: (200, 200)
+
+<TitleText>:
+    font_size: Window.height/10
+    color: (0, 0, 128, 1)
+    bold: True
+    text_size: (Window.width, None)
+    halign: 'center'
+
+
+

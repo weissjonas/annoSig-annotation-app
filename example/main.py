@@ -98,30 +98,17 @@ class LeaderGrid(GridLayout):
 
 # Buttons to switch between screens
 class SwitchButton(Button):
-    background_normal = 'navy.png'
-    background_down = 'pressed.png'
-    font_size = Window.height*0.035
-    bold = True
-    halign = 'center'
+    pass
 
 
 # Text used for titles
 class TitleText(Label):
-    font_size = Window.height/10
-    color = (0, 0, 128, 1)
-    bold = True
-    text_size = (Window.width*0.8, None)
-    halign = 'center'
+    pass
 
 
 # Text featured in instruction screen
 class TextLabel(Label):
-    font_size = Window.height/20
-    text_size = (Window.width * 0.8, None)
-    color = (0, 0, 128, 1)
-    halign = 'center'
-    bold = True
-    padding = (200, 200)
+    pass
 
 
 # Create Screen Manager to house different screens within the app
@@ -133,7 +120,8 @@ class ScreenManage(ScreenManager):
         self.start = StartScreen()
         anno = AnnotateScreen()
         menu = MenuScreen()
-        self.inst1 = InstructionScreen()
+        self.inst1 = InstructionScreen1()
+        self.inst2 = InstructionScreen2()
         tutorial = TutorialScreen()
         self.tutorialend = TutorialEndScreen()
         self.example = ExampleScreen()
@@ -158,6 +146,7 @@ class ScreenManage(ScreenManager):
         self.add_widget(menu)
         self.add_widget(anno)
         self.add_widget(self.inst1)
+        self.add_widget(self.inst2)
         self.add_widget(tutorial)
         self.add_widget(self.tutorialend)
         self.add_widget(self.example)
@@ -788,87 +777,11 @@ class ContScreen(Screen):
         self.manager.transition.direction = 'right'
 
 
-class InstructionScreen(Screen):
-    def __init__(self):
-        Screen.__init__(self, name='inst1')
+class InstructionScreen1(Screen):
+    pass
 
-        # Create box layout to house all widgets
-        self.box_layout = BoxLayout(orientation='vertical', padding=(20, 0))
-        # Create grid layout to house buttons
-        self.grid_layout = GridLayout(cols=3, rows=1, size_hint=(1, 0.15), padding=(Window.width/50, 10),
-                                      spacing=(Window.width / 5, 10))
-        # Create buttons and spacing widgets
-        self.menu_button = SwitchButton(text='Menu', size_hint_x=0.2)
-        self.next_button = SwitchButton(text='Next', size_hint_x=0.2)
-        self.back_button = SwitchButton(text='Back', size_hint_x=0.2)
-        self.tutorial_button = SwitchButton(text='Start Tutorial', size_hint_x=0.2)
-        self.blank = Label(size_hint_x=0.2)
-
-        # Bind switching functions to buttons
-        self.menu_button.bind(on_press=self.menu_screen)
-        self.next_button.bind(on_press=self.page_2)
-        # Create photo widget
-        self.image = Image(source='tut_1.png')
-        # Write text label for above photo
-        self.label_1 = TextLabel(size_hint=(1, 0.2), text='Layout of Annotation Screen')
-        # Add buttons to grid layout
-        self.grid_layout.add_widget(self.menu_button)
-        self.grid_layout.add_widget(self.blank)
-        self.grid_layout.add_widget(self.next_button)
-        self.tutorial_button.bind(on_press=self.tutorial)
-        # Add widgets to box layout
-        self.box_layout.add_widget(self.label_1)
-        self.box_layout.add_widget(self.image)
-        self.box_layout.add_widget(self.grid_layout)
-        # Add box layout to screen
-        self.add_widget(self.box_layout)
-
-    def menu_screen(self, *args):
-        self.manager.current = 'menu'
-        self.manager.transition.direction = 'right'
-
-    def tutorial(self, *args):
-        self.manager.current = 'tutorial'
-        self.manager.transition.direction = 'left'
-
-    def unbind_all(self):
-        """Unbind all functions from buttons"""
-        self.next_button.unbind(on_press=self.page_1)
-        self.next_button.unbind(on_press=self.page_2)
-        self.back_button.unbind(on_press=self.page_1)
-        self.back_button.unbind(on_press=self.page_2)
-
-    def page_1(self, *args):
-        """Create buttons and text for first instruction page"""
-
-        self.label_1.text = 'Layout of Annotation Screen'
-        self.image.source = 'tut_1.png'
-        # Remove all widgets from previous page
-        self.grid_layout.clear_widgets()
-        # Add buttons for this page
-        self.grid_layout.add_widget(self.menu_button)
-        self.grid_layout.add_widget(self.blank)
-        self.grid_layout.add_widget(self.next_button)
-        # Call function to unbind all button functions
-        self.unbind_all()
-        # Bind correct page to the next button
-        self.next_button.bind(on_press=self.page_2)
-
-    def page_2(self, *args):
-        """Create buttons and text for second instruction page"""
-        self.label_1.text = 'Annotate the signal by swiping it to the right and assigning a score'
-        self.image.source = 'tut_2.png'
-        # Remove all widgets from previous page
-        self.grid_layout.clear_widgets()
-        # Add buttons for this page
-        self.grid_layout.add_widget(self.menu_button)
-        self.grid_layout.add_widget(self.back_button)
-        self.grid_layout.add_widget(self.tutorial_button)
-
-        self.unbind_all()
-        # Bind correct page to back and next buttons
-        self.back_button.bind(on_press=self.page_1)
-
+class InstructionScreen2(Screen):
+    pass
 
 class TutorialScreen(Screen):
     def __init__(self):
