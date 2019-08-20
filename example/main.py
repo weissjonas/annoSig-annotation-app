@@ -158,39 +158,11 @@ class ScreenManage(ScreenManager):
 
 
 class StartScreen(Screen):
-    def __init__(self):
-        Screen.__init__(self, name='start')
-
-        # Create box layout to house widgets
-        self.box_layout = BoxLayout(orientation='vertical')
-        # Create grid layout to house username label and text box
-        self.grid_layout_usr = GridLayout(cols=2, padding=(Window.width / 5, Window.height/11),
-                                          spacing=(Window.width / 30, Window.height / 12), size_hint_y=0.4)
-        self.grid_layout_button = GridLayout(cols=1, padding=(Window.width/2.5, Window.height/20),
-                                             spacing=(Window.width/20, Window.height/20), size_hint_y=0.3)
-        # Create start screen widgets
-        self.image = Image(source='fecg_logo.png')
-        self.username_label = TextLabel(text='Username:')
-        self.text_box_usr = TextInput(multiline=False, cursor_color=(0, 0, 128, 1), hint_text='Please Enter a Username',
-                                      size_hint_y=0.15)
-        self.menu_button = SwitchButton(text='Ok!', size_hint=(0.2, 0.5))
-        self.menu_button.bind(on_press=self.menu_screen)
-        # Add username widgets to grid layout
-        self.grid_layout_usr.add_widget(self.username_label)
-        self.grid_layout_usr.add_widget(self.text_box_usr)
-        self.grid_layout_button.add_widget(self.menu_button)
-        # Add widgets to box layout
-        self.box_layout.add_widget(self.image)
-        self.box_layout.add_widget(self.grid_layout_usr)
-        self.box_layout.add_widget(self.grid_layout_button)
-        # Add box layout to screen
-        self.add_widget(self.box_layout)
-
     def menu_screen(self, *args):
         """Switch to menu screen on button press and writes user data to user_score.csv"""
         global username, user_id
         # Set username to text entered by user
-        username = self.text_box_usr.text
+        username = self.ids.textinput.text
         if username != '':
             self.manager.current = 'menu'
             self.manager.transition.direction = 'left'
@@ -280,36 +252,9 @@ class UserScreen(Screen):
 class MenuScreen(Screen):
     def __init__(self):
         global username, achievement, total_annos
-        Screen.__init__(self, name='menu')
+        self.username = username
+        Screen.__init__(self)
 
-        # Create Box Layout for the screen
-        self.box_layout = BoxLayout(orientation='vertical')
-        # Create Grid Layout for the buttons and title/image
-        self.grid_layout_title = GridLayout(cols=1)
-        self.grid_layout_buttons = GridLayout(cols=1, padding=(Window.width/3, Window.height/30), size_hint=(1, 0.5),
-                                              spacing=5)
-        # Navigation buttons
-        self.start_button = SwitchButton(text='Start')
-        self.instruct_button = SwitchButton(text='Instructions')
-        self.user_button = SwitchButton(text='User Profile')
-        # Welcome label
-        self.welcome_label = TextLabel(text='Welcome ' + username + '!')
-        # Bind screen switching functions to buttons
-        self.start_button.bind(on_release=self.anno_screen)
-        self.instruct_button.bind(on_press=self.inst_screen)
-        self.user_button.bind(on_press=self.user_screen)
-        # Menu image
-        self.pic = Image(source='fecg_logo.png', size_hint=(0.6, 0.6))
-
-        # Add widgets to grid layout
-        self.grid_layout_buttons.add_widget(self.welcome_label)
-        self.grid_layout_buttons.add_widget(self.instruct_button)
-        self.grid_layout_buttons.add_widget(self.start_button)
-        self.grid_layout_buttons.add_widget(self.user_button)
-        self.grid_layout_title.add_widget(self.pic)
-        self.box_layout.add_widget(self.grid_layout_title)
-        self.box_layout.add_widget(self.grid_layout_buttons)
-        self.add_widget(self.box_layout)
 
     def anno_screen(self, *args):
         """Change screen to annotation game"""
@@ -1157,86 +1102,11 @@ class TutorialScreen(Screen):
 
 
 class TutorialEndScreen(Screen):
-    def __init__(self):
-        Screen.__init__(self, name='tutorialend')
-        self.box_layout = BoxLayout(orientation='vertical')
-        # Create Grid Layout for the buttons and title/image
-        self.grid_layout_title = GridLayout(cols=1, padding=Window.height/30, spacing=Window.height/30)
-        self.grid_layout_buttons = GridLayout(cols=1, padding=(Window.width/2.5, 40), size_hint=(1, 0.3))
-        # Navigation buttons
-        self.menu_button = SwitchButton(text='Menu', size_hint=(0.3, 0.5))
-
-        # Bind screen switching functions to buttons
-        self.menu_button.bind(on_release=self.menu_screen)
-        self.image = Image(source='tut_compl.png')
-        self.title_label = TitleText(text='Congratulations! ', size_hint_y=0.2)
-        self.text_label = TextLabel(text='You\'ve completed the tutorial! \n You are now ready to start your '
-                                         'annotations. \n Please return to the menu to get started!')
-
-        # Add widgets to grid layout
-        self.grid_layout_buttons.add_widget(self.menu_button)
-        self.grid_layout_title.add_widget(self.title_label)
-        self.grid_layout_title.add_widget(self.image)
-        self.grid_layout_title.add_widget(self.text_label)
-        self.box_layout.add_widget(self.grid_layout_title)
-        self.box_layout.add_widget(self.grid_layout_buttons)
-        self.add_widget(self.box_layout)
-
-
-    def menu_screen(self, *args):
-        """Changes screen to menu screen"""
-        self.manager.current = 'menu'
-        self.manager.transition.direction = 'right'
+    pass
 
 
 class ExampleScreen(Screen):
-    def __init__(self):
-        Screen.__init__(self, name='example')
-        global last_screen
-        self.box = BoxLayout(padding=(Window.width/30, 0))
-        # Create scrollview widget
-        self.scroll = ScrollView(size_hint=(1, None), size=(Window.width, Window.height))
-        # Create box layout to house widgets
-        self.grid_layout = GridLayout(cols=1, size_hint_y=None, padding=Window.width/30)
-        # Make sure the height is such that there is something to scroll.
-        self.grid_layout.bind(minimum_height=self.grid_layout.setter('height'))
-        # Create grid layout to house images and buttons
-        self.grid_layout_img = GridLayout(cols=2, size_hint_y=None, height=Window.height*1.5,
-                                          padding=(Window.width/30, 0))
-        self.grid_layout_btn = GridLayout(cols=2, padding=(0, Window.height/30), size_hint_y=None,
-                                          height=Window.height/7)
-        # Create buttons and empty spacing widget
-        self.back_button = SwitchButton(text='Back', size_hint_x=0.15)
-        self.label = TitleText(text='Examples')
-        # Bind screen switching function to button
-        self.back_button.bind(on_press=self.back_screen)
-        # Create example images and labels
-        self.good_im = Image(source='good.png')
-        print(self.good_im.size)
-        self.unclear_im = Image(source='unclear.png')
-        self.bad_im = Image(source='bad.png')
-        self.good_lab = TextLabel(text='GOOD:')
-        self.unclear_lab = TextLabel(text='UNCLEAR:')
-        self.bad_lab = TextLabel(text='BAD:')
-
-        # Add images and labels to grid layout
-        self.grid_layout_img.add_widget(self.good_lab)
-        self.grid_layout_img.add_widget(self.good_im)
-        self.grid_layout_img.add_widget(self.unclear_lab)
-        self.grid_layout_img.add_widget(self.unclear_im)
-        self.grid_layout_img.add_widget(self.bad_lab)
-        self.grid_layout_img.add_widget(self.bad_im)
-        # Add button to grid layout
-        self.grid_layout_btn.add_widget(self.back_button)
-        self.grid_layout_btn.add_widget(self.label)
-
-        # Add grid layouts to box layout
-        self.grid_layout.add_widget(self.grid_layout_btn)
-        self.grid_layout.add_widget(self.grid_layout_img)
-        # Add box layout to screen
-        self.scroll.add_widget(self.grid_layout)
-        self.box.add_widget(self.scroll)
-        self.add_widget(self.box)
+    global last_screen
 
     def back_screen(self, *args):
         # Check if user is accessing example screen from anno screen or from tutorial

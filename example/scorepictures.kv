@@ -1,5 +1,58 @@
 #:import Window kivy.core.window.Window
-#:import update_rankings main.update_rankings
+
+<StartScreen>:
+    name: 'start'
+    BoxLayout:
+        orientation: 'vertical'
+        Image:
+            source: 'fecg_logo.png'
+        GridLayout:
+            cols: 2
+            padding: (Window.width/5, Window.height/11)
+            spacing: (Window.width/30, Window.height/12)
+            size_hint_y: 0.4
+            TextLabel:
+                text: 'Username: '
+            TextInput:
+                id: textinput
+                multiline: False
+                cursor_color: (0, 0, 128, 1)
+                hint_text: 'Please Enter a Username'
+                size_hint_y: 0.15
+        GridLayout:
+            cols: 1
+            padding: (Window.width/2.5, Window.height/20)
+            spacing: (Window.width/20, Window.height/20)
+            size_hint_y: 0.3
+            SwitchButton:
+                text: 'Menu'
+                on_press: root.menu_screen()
+
+<MenuScreen>:
+    name: 'menu'
+    BoxLayout:
+        orientation: 'vertical'
+        GridLayout:
+            cols: 1
+            Image:
+                source: 'fecg_logo.png'
+        GridLayout:
+            cols: 1
+            padding: (Window.width/3, Window.height/30)
+            size_hint: (1, 0.5)
+            spacing: 5
+            TextLabel:
+                text: 'Welcome ' + root.username + '!'
+            SwitchButton:
+                text: 'Instructions'
+                on_press: root.inst_screen()
+            SwitchButton:
+                text: 'Start'
+                on_press: root.anno_screen()
+            SwitchButton:
+                text: 'User Profile'
+                on_press: root.user_screen()
+
 
 <InstructionScreen1>:
     name: 'inst1'
@@ -18,7 +71,7 @@
             padding: (Window.width/50, 10)
             spacing: (Window.width/5, 10)
             SwitchButton:
-                id:'menu_button'
+                id: menu_button
                 text: 'Menu'
                 size_hint_x: 0.2
                 on_press:
@@ -27,7 +80,7 @@
             Label:
                 size_hint_x: 0.2
             SwitchButton:
-                id:'next_button'
+                id: next_button
                 text: 'Next'
                 size_hint_x: 0.2
                 on_press:
@@ -66,7 +119,6 @@
                 on_press:
                     root.manager.current = 'inst1'
                     root.manager.transition.direction = 'left'
-
             SwitchButton:
                 id:'next_button'
                 text: 'Start \n Tutorial'
@@ -75,8 +127,72 @@
                     root.manager.current = 'tutorial'
                     root.manager.transition.direction = 'left'
 
+<ExampleScreen>:
+    name: 'example'
+    BoxLayout:
+        padding: (Window.width/30, 0)
+        ScrollView:
+            size_hint: (1, None)
+            size: (Window.width, Window.height)
+            GridLayout:
+                cols: 1
+                size_hint_y: None
+                padding: Window.width/30
+                height: self.minimum_height
+                GridLayout:
+                    cols: 2
+                    padding: (0, Window.height/30)
+                    size_hint_y: None
+                    height: Window.height/7
+                    SwitchButton:
+                        text: 'Back'
+                        size_hint_x: 0.15
+                        on_press: root.back_screen()
+                    TitleText:
+                        text: 'Examples'
+                GridLayout:
+                    cols: 2
+                    size_hint_y: None
+                    height: Window.height*1.5
+                    padding: (Window.width/30, 0)
+                    Image:
+                        source: 'good.png'
+                    TextLabel:
+                        text: 'Good: '
+                    Image:
+                        source: 'unclear.png'
+                    TextLabel:
+                        text: 'Unclear: '
+                    Image:
+                        source: 'bad.png'
+                    TextLabel:
+                        text: 'Bad: '
 
-
+<TutorialEndScreen>:
+    name: 'tutorialend'
+    BoxLayout:
+        orientation: 'vertical'
+        GridLayout:
+            cols: 1
+            padding: Window.height/30
+            spacing: Window.height/30
+            TitleText:
+                text: 'Congratulations!'
+                size_hint_y: 0.2
+            Image:
+                source: 'tut_compl.png'
+            TextLabel:
+                text: 'You\'ve completed the tutorial! \n You are now ready to start your annotations. \n Please return to the menu to get started!'
+        GridLayout:
+            cols: 1
+            padding: (Window.width/2.5, 40)
+            size_hint: (1, 0.3)
+            SwitchButton:
+                text: 'Menu'
+                size_hint: (0.3, 0.5)
+                on_press:
+                    root.manager.current = 'menu'
+                    root.manager.transition.direction = 'right'
 
 <SwitchButton>:
     background_normal: 'navy.png'
@@ -98,6 +214,7 @@
     bold: True
     text_size: (Window.width, None)
     halign: 'center'
+
 
 
 
