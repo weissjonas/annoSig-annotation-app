@@ -1,21 +1,14 @@
 from kivy.app import App
-from kivy.uix.image import Image
 from kivy.uix.button import Button
-from kivy.uix.textinput import TextInput
-from kivy.uix.behaviors import DragBehavior
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.floatlayout import FloatLayout
 from kivy.core.window import Window
 from kivy.uix.screenmanager import Screen, ScreenManager
-from kivy.uix.progressbar import ProgressBar
 from kivy.uix.widget import WidgetException
-from kivy.uix.scrollview import ScrollView
-from kivy.uix.popup import Popup
-from kivy.graphics import Rectangle, Color, Point, GraphicException
+from kivy.graphics import Color, Point, GraphicException
 from kivy.clock import Clock
 from glob import glob
+import os
 from os.path import join, dirname
 from random import randint
 import csv
@@ -23,6 +16,7 @@ from math import sqrt
 import ntpath
 import datetime
 from functools import partial
+import re
 
 
 # Store user_id and username in global variable
@@ -41,6 +35,7 @@ achievement = None
 start = None
 inst1 = None
 inst2 = None
+inst3 = None
 example = None
 leaderboard = None
 end = None
@@ -66,7 +61,9 @@ is_finished = False
 # Keep track of last screen
 last_screen = None
 # Number of signals to annotate before triggering continue screen
-continue_trigger = 2
+continue_trigger = 10
+# Store file directory in a variable
+curdir = dirname(__file__)
 # Move screen when user acivates virtual keyboard on mobile
 Window.softinput_mode = 'pan'
 
@@ -104,8 +101,8 @@ class TextLabel(Label):
 class ScreenManage(ScreenManager):
     def __init__(self):
         ScreenManager.__init__(self)
-        global user, menu, anno, cont, tutorial, achievement, settings, start, inst1, inst2, tutorialend, example, \
-            leaderboard, end
+        global user, menu, anno, cont, tutorial, achievement, settings, start, inst1, inst2, inst3, tutorialend, \
+            example, leaderboard, end
 
         end = EndScreen()
         start = StartScreen()
@@ -113,6 +110,7 @@ class ScreenManage(ScreenManager):
         menu = MenuScreen()
         inst1 = InstructionScreen1()
         inst2 = InstructionScreen2()
+        inst3 = InstructionScreen3()
         tutorial = TutorialScreen()
         tutorialend = TutorialEndScreen()
         example = ExampleScreen()
@@ -121,6 +119,7 @@ class ScreenManage(ScreenManager):
         achievement = AchievementScreen()
         settings = SettingsScreen()
         leaderboard = LeaderboardScreen()
+
 
         # Check if it is user's first time using app
         self.empty = True
@@ -137,7 +136,9 @@ class ScreenManage(ScreenManager):
         self.add_widget(end)
         self.add_widget(anno)
         self.add_widget(inst1)
-        self.add_widget(inst2)
+        print(type(inst1))
+#        self.add_widget(inst2)
+#        self.add_widget(inst3)
         self.add_widget(tutorial)
         self.add_widget(tutorialend)
         self.add_widget(example)
@@ -146,6 +147,22 @@ class ScreenManage(ScreenManager):
         self.add_widget(achievement)
         self.add_widget(settings)
         self.add_widget(leaderboard)
+        # you should change the path
+
+        with open('scorepictures.kv', 'r') as file:
+            instructions_kv_str = file.read().replace('\n', '')
+
+        pattern = re.compile("<InstructionScreen\d>:")
+        pages = len(re.findall(pattern, instructions_kv_str))
+
+        for i in range(1, pages + 1):
+             self.add_widget(globals()["inst"+str(i)])
+
+
+def dict_from_class(cls):
+    return dict(
+        (key, value) for (key, value) in cls.__dict__.items()
+        )
 
 
 class StartScreen(Screen):
@@ -179,6 +196,7 @@ class UserScreen(Screen):
         settings.ids.box.add_widget(settings.ids.top_grid)
         settings.ids.box.add_widget(settings.ids.grid)
         settings.grid_widgets()
+
 
 class MenuScreen(Screen):
     def __init__(self):
@@ -233,8 +251,7 @@ class AnnotateScreen(Screen):
         self.pictures = []
         # Create variable to store machine score of signals
         self.machine_score = float()
-        # Store file directory in a variable
-        curdir = dirname(__file__)
+
         # Add all pictures in the 'Images' folder to the pictures list
         for filename in glob(join(curdir, 'images', '*')):
             self.pictures.append(filename)
@@ -545,6 +562,8 @@ class InstructionScreen1(Screen):
 class InstructionScreen2(Screen):
     pass
 
+class InstructionScreen3(Screen):
+    pass
 
 class TutorialScreen(Screen):
     def __init__(self):
@@ -1202,4 +1221,21 @@ class ScorePicturesApp(App):
 
 # Run app
 if __name__ == '__main__':
+
+    with open('scorepictures.kv', 'r') as file:
+        instructions_kv_str = file.read().replace('\n', '')
+
+    pattern = re.compile("<InstructionScreen\d>:")
+    pages = len(re.findall(pattern, instructions_kv_str))
+
+    for i in range(1, pages + 1):
+        class_name = "InstructionScreen" + str(i)
+        globals()[class_name] = type(class_name, (), dict_from_class(Screen))
+        globals()["inst" + str(i)] = globals()[class_name]()
+        print(type(globals()["inst" + str(i)]))
+
+    print(type(inst1))
+    print(type(InstructionScreen1))
+    print(type(Screen))
+
     ScorePicturesApp().run()

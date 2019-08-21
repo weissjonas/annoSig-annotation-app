@@ -5,7 +5,7 @@
     BoxLayout:
         orientation: 'vertical'
         Image:
-            source: 'fecg_logo.png'
+            source: 'logo.png'
         GridLayout:
             cols: 2
             padding: (Window.width/5, Window.height/11)
@@ -35,7 +35,7 @@
         GridLayout:
             cols: 1
             Image:
-                source: 'fecg_logo.png'
+                source: 'logo.png'
         GridLayout:
             cols: 1
             padding: (Window.width/3, Window.height/30)
@@ -189,6 +189,48 @@
                 size_hint_x: 0.2
                 on_press:
                     root.manager.current = 'inst1'
+                    root.manager.transition.direction = 'right'
+            SwitchButton:
+                id:'next_button'
+                text: 'Next'
+                size_hint_x: 0.2
+                on_press:
+                    root.manager.current = 'inst3'
+                    root.manager.transition.direction = 'left'
+
+
+<InstructionScreen3>:
+    name: 'inst3'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: (20, 0)
+        TextLabel:
+            text: 'The fetal heartbeats appear in between the maternal beats'
+            text_size: (1000, None)
+            size_x: Window.width
+            size_hint: (1, 0.2)
+        Image:
+            id: image
+            source: 'tut_3.png'
+        GridLayout:
+            cols: 3
+            rows: 1
+            size_hint: (1, 0.15)
+            padding: (Window.width/50, 10)
+            spacing: (Window.width/5, 10)
+            SwitchButton:
+                id:'menu_button'
+                text: 'Menu'
+                size_hint_x: 0.2
+                on_press:
+                    root.manager.current = 'menu'
+                    root.manager.transition.direction = 'right'
+            SwitchButton:
+                id: 'back_button'
+                text: 'Back'
+                size_hint_x: 0.2
+                on_press:
+                    root.manager.current = 'inst2'
                     root.manager.transition.direction = 'right'
             SwitchButton:
                 id:'next_button'
