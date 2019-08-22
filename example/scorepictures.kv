@@ -5,7 +5,7 @@
     BoxLayout:
         orientation: 'vertical'
         Image:
-            source: 'logo.png'
+            source: 'pictures/logo.png'
         GridLayout:
             cols: 2
             padding: (Window.width/5, Window.height/11)
@@ -35,7 +35,7 @@
         GridLayout:
             cols: 1
             Image:
-                source: 'logo.png'
+                source: 'pictures/logo.png'
         GridLayout:
             cols: 1
             padding: (Window.width/3, Window.height/30)
@@ -93,7 +93,7 @@
                         color: (0, 0, 0, 1)
                         size_hint_x: 0.1
                         font_size: Window.height/25
-                    Label:
+                    TextLabel:
                         id: ranking
         GridLayout:
             rows: 1
@@ -132,7 +132,7 @@
             text: 'Layout of Annotation Screen'
             size_hint: (1, 0.2)
         Image:
-            source: 'tut_1.png'
+            source: 'pictures/tut_1.png'
         GridLayout:
             cols: 3
             rows: 1
@@ -169,7 +169,7 @@
             size_hint: (1, 0.2)
         Image:
             id: image
-            source: 'tut_2.png'
+            source: 'pictures/tut_2.png'
         GridLayout:
             cols: 3
             rows: 1
@@ -211,7 +211,7 @@
             size_hint: (1, 0.2)
         Image:
             id: image
-            source: 'tut_3.png'
+            source: 'pictures/tut_3.png'
         GridLayout:
             cols: 3
             rows: 1
@@ -270,15 +270,15 @@
                     height: Window.height*1.5
                     padding: (Window.width/30, 0)
                     Image:
-                        source: 'good.png'
+                        source: 'pictures/good.png'
                     TextLabel:
                         text: 'Good: '
                     Image:
-                        source: 'unclear.png'
+                        source: 'pictures/unclear.png'
                     TextLabel:
                         text: 'Unclear: '
                     Image:
-                        source: 'bad.png'
+                        source: 'pictures/bad.png'
                     TextLabel:
                         text: 'Bad: '
 
@@ -330,7 +330,7 @@
                         color: (0, 0, 0, 1)
                         size_hint_x: 0.1
                         font_size: Window.height/25
-                    Label:
+                    TextLabel:
                         id: ranking
                 Label:
                     id: empty
@@ -386,7 +386,7 @@
                 text: 'Congratulations!'
                 size_hint_y: 0.2
             Image:
-                source: 'tut_compl.png'
+                source: 'pictures/tut_compl.png'
             TextLabel:
                 text: 'You\'ve completed the tutorial! \n You are now ready to start your annotations. \n Please return to the menu to get started!'
         GridLayout:
@@ -445,7 +445,7 @@
     BoxLayout:
         orientation: 'vertical'
         Image:
-            source: 'icon.png'
+            source: 'pictures/icon.png'
         GridLayout:
             cols: 2
             padding: (Window.width/5, Window.height/15)
@@ -657,8 +657,8 @@
                     root.manager.current = 'menu'
                     root.manager.transition.direction = 'right'
 <SwitchButton>:
-    background_normal: 'navy.png'
-    background_down: 'pressed.png'
+    background_normal: 'pictures/navy.png'
+    background_down: 'pictures/pressed.png'
     font_size: Window.height*0.035
     bold: 'True'
     halign: 'center'

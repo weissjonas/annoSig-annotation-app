@@ -52,6 +52,7 @@ total_exc = 0
 avg_ranking = 0
 # Create dictionary to track which days user does annotations
 date_tracker = {}
+time_check = False
 # Create dictionary to store scores
 score_dict = {}
 # Check if user has completed the tutorial
@@ -62,8 +63,9 @@ is_finished = False
 last_screen = None
 # Number of signals to annotate before triggering continue screen
 continue_trigger = 10
-# Store file directory in a variable
+# Store directory name in a variable
 curdir = dirname(__file__)
+
 # Move screen when user acivates virtual keyboard on mobile
 Window.softinput_mode = 'pan'
 
@@ -123,7 +125,7 @@ class ScreenManage(ScreenManager):
 
         # Check if it is user's first time using app
         self.empty = True
-        with open('user_score.csv', mode='r') as score_data:
+        with open(join(curdir, 'csv', 'user_score.csv'), mode='r') as score_data:
             reader = csv.reader(score_data)
             for row in reader:
                 if row != '':
@@ -136,9 +138,8 @@ class ScreenManage(ScreenManager):
         self.add_widget(end)
         self.add_widget(anno)
         self.add_widget(inst1)
-        print(type(inst1))
-#        self.add_widget(inst2)
-#        self.add_widget(inst3)
+        self.add_widget(inst2)
+        self.add_widget(inst3)
         self.add_widget(tutorial)
         self.add_widget(tutorialend)
         self.add_widget(example)
@@ -147,16 +148,6 @@ class ScreenManage(ScreenManager):
         self.add_widget(achievement)
         self.add_widget(settings)
         self.add_widget(leaderboard)
-        # you should change the path
-
-        with open('scorepictures.kv', 'r') as file:
-            instructions_kv_str = file.read().replace('\n', '')
-
-        pattern = re.compile("<InstructionScreen\d>:")
-        pages = len(re.findall(pattern, instructions_kv_str))
-
-        for i in range(1, pages + 1):
-             self.add_widget(globals()["inst"+str(i)])
 
 
 def dict_from_class(cls):
@@ -181,7 +172,7 @@ class StartScreen(Screen):
             # Display welcome message after first launch
             menu.ids.welcome_label.text = 'Welcome ' + username + '!'
             # Write username to csv file
-            with open('user_score.csv', mode='a', newline='') as score_data:
+            with open(join(curdir, 'csv', 'user_score.csv'), mode='a', newline='') as score_data:
                 writer = csv.writer(score_data)
                 writer.writerow(['', user_id, '', '', '', username])
         else:
@@ -251,12 +242,11 @@ class AnnotateScreen(Screen):
         self.pictures = []
         # Create variable to store machine score of signals
         self.machine_score = float()
-
         # Add all pictures in the 'Images' folder to the pictures list
         for filename in glob(join(curdir, 'images', '*')):
             self.pictures.append(filename)
         # Remove any pictures that have already been annotated
-        with open('user_score.csv', mode='r') as score_data:
+        with open(join(curdir, 'csv', 'user_score.csv'), mode='r') as score_data:
             reader = csv.reader(score_data)
             for row in reader:
                 # Get user's id
@@ -360,7 +350,7 @@ class AnnotateScreen(Screen):
     def on_touch_up(self, touch):
         """Calculate the user score based on the direction of their touch and ensure the movement was big enough"""
         super(AnnotateScreen, self).on_touch_up(touch)
-        global total_ranking, lines
+        global lines
 
         if touch.grab_current is not self:
             return
@@ -408,12 +398,12 @@ class AnnotateScreen(Screen):
         global total_counter, continue_trigger
         try:
             # Write picture name and score to csv
-            with open('user_score.csv', mode='a', newline='') as score_data:
+            with open(join(curdir, 'csv', 'user_score.csv'), mode='a', newline='') as score_data:
                 writer = csv.writer(score_data)
-                writer.writerow([self.date.strftime("%d-%m-%Y"), user_id, ntpath.basename(self.current), score,
+                writer.writerow([self.date.strftime("%d-%m-%Y %H.%M"), user_id, ntpath.basename(self.current), score,
                                  self.ranking, ''])
             # Find score assigned by machine learner
-            with open('machine_score.csv', mode='r') as machine:
+            with open(join(curdir, 'csv', 'machine_score.csv'), mode='r') as machine:
                 reader = csv.reader(machine)
                 for row in reader:
                     if row[0] == ntpath.basename(self.current):
@@ -575,8 +565,7 @@ class TutorialScreen(Screen):
         self.prev_soln = []
         self.counter = 0
         self.tracker = 'signal'
-        # Store directory name in a variable
-        curdir = dirname(__file__)
+
         # Add all pictures in tutorial folder to list
         for filename in glob(join(curdir, 'tutorial', '*')):
             self.pictures.append(filename)
@@ -659,7 +648,7 @@ class TutorialScreen(Screen):
     def on_touch_up(self, touch):
         """Calculate the user score based on the direction of their touch and ensure the movement was big enough"""
         super(TutorialScreen, self).on_touch_up(touch)
-        global total_ranking, lines
+        global lines
 
         if touch.grab_current is not self:
             return
@@ -674,7 +663,7 @@ class TutorialScreen(Screen):
             min_dist, dist, dx, dy = calculate_dist(*self.coord)
             self.score_val = touch.y / Window.height
 
-            with open('tutorial_score.csv', mode='r') as machine:
+            with open(join(curdir, 'csv','tutorial_score.csv'), mode='r') as machine:
                 reader = csv.reader(machine)
                 for row in reader:
                     if row[0] == ntpath.basename(self.current):
@@ -845,7 +834,7 @@ class TutorialScreen(Screen):
             self.manager.current = 'tutorialend'
             self.manager.transition.direction = 'left'
             # Record if user has completed the tutorial
-            with open('user_score.csv', mode='r+', newline='') as score_data:
+            with open(join(curdir, 'csv', 'user_score.csv'), mode='r+', newline='') as score_data:
                 reader = csv.reader(score_data)
                 writer = csv.writer(score_data)
                 # Check if user has previously completed the tutorial
@@ -905,18 +894,18 @@ class AchievementScreen(Screen):
         Screen.__init__(self)
         self.username = username
         # Create image widgets for achievements
-        self.tut_badge = AchievementBadge(trophy_source='trophy.png', title_text='Mastering the Basics',
+        self.tut_badge = AchievementBadge(trophy_source='pictures/trophy.png', title_text='Mastering the Basics',
                                           description='Complete the tutorial', max_progress=1)
-        self.anno_badge = AchievementBadge(trophy_source='trophy.png', title_text='Most Dedicated Player',
+        self.anno_badge = AchievementBadge(trophy_source='pictures/trophy.png', title_text='Most Dedicated Player',
                                            description='Lifetime number of annotations', max_progress=1)
-        self.ranking_badge = AchievementBadge(trophy_source='trophy.png', title_text='Honour Roll',
+        self.ranking_badge = AchievementBadge(trophy_source='pictures/trophy.png', title_text='Honour Roll',
                                               description='Lifetime average ranking', max_progress=25)
-        self.excellent_badge = AchievementBadge(trophy_source='trophy.png', title_text='Admirable Annotator',
+        self.excellent_badge = AchievementBadge(trophy_source='pictures/trophy.png', title_text='Admirable Annotator',
                                                 description='Lifetime number of \'Excellent\' rankings', max_progress=1)
-        self.days_badge = AchievementBadge(trophy_source='trophy.png', title_text='Repeat Offender',
+        self.days_badge = AchievementBadge(trophy_source='pictures/trophy.png', title_text='Repeat Offender',
                                            description='How many days you have annotated',
                                            max_progress=1)
-        self.night_badge = AchievementBadge(trophy_source='trophy.png', title_text='Night Owl',
+        self.night_badge = AchievementBadge(trophy_source='pictures/trophy.png', title_text='Night Owl',
                                             description='Annotate between midnight and 5 a.m.',
                                             max_progress=1)
 
@@ -1031,7 +1020,7 @@ class SettingsScreen(Screen):
             # Reset welcome label on menu screen with new username
             menu.ids.welcome_label.text = 'Welcome ' + username +'!'
             # Write new username in user_scores.csv file
-            with open('user_score.csv', mode='a', newline='') as score_data:
+            with open(join(curdir, 'csv', 'user_score.csv'), mode='a', newline='') as score_data:
                 writer = csv.writer(score_data)
                 writer.writerow(['', user_id, '', '', '', username])
         else:
@@ -1107,7 +1096,8 @@ def line_dist(x1, y1, x2, y2):
 
 def update_rankings():
     """Updates username, total annotations, average ranking, and other user stats by reading csv file"""
-    global total_ranking, total_annos, avg_ranking, tutorial_check, total_exc, date_tracker
+    global total_annos, avg_ranking, tutorial_check, total_exc, date_tracker, score_dict, time_check
+
     # Set username on user profile screen
     user.ids.user.text = username
     # Set username on settings screen
@@ -1119,66 +1109,76 @@ def update_rankings():
     # Update continue trigger on settings screen
     settings.ids.cont_num.text = str(continue_trigger)
     # Read csv file
-    with open('user_score.csv', mode='r') as score_data:
+    with open(join(curdir, 'csv', 'user_score.csv'), mode='r') as score_data:
         reader = csv.reader(score_data)
+        time = []
         for row in reader:
             # Adds most recent scores to score dictionary from csv file
             score_dict[row[2]] = (row[3], row[4])
             # Adds dates to date dictionary
-            date_tracker[row[0]] = 1
+            d = row[0].split()
+            if len(d) == 2:
+                date_tracker[d[0]] = d[1]
+                time.append(d[1])
             # Check if user has completed tutorial
             if row[0] == 'tutorial':
                 tutorial_check = True
+    for t in time:
+        if float(t) > 0 and float(t) < 5:
+            time_check = True
     try:
         # Delete empty row containing user name from score dictionary
         del score_dict['']
-        # Delete empty row containing username and tutorial completion from date dictionary
-        del date_tracker[''], date_tracker['tutorial']
+        # Get user's total amount of annotations completed
+        total_annos = len(score_dict)
+        # Update total annotations label
+        user.ids.total.text = str(total_annos)
+        # Get user's total ranking (compared to machine learning score for signal)
+        total_ranking = 0
+        # Store how many 'excellent' rankings the user has received
+        total_exc = 0
+        # Calculate users total ranking and number of excellents
+        for key in score_dict:
+            total_ranking = total_ranking + float(score_dict[key][1])
+            if float(score_dict[key][1]) <= 0.1:
+                total_exc += 1
     except KeyError:
         return
-    # Get user's total amount of annotations completed
-    total_annos = len(score_dict)
-    # Get user's total ranking (compared to machine learning score for signal)
-    total_ranking = 0
-    # Store how many 'excellent' rankings the user has received
-    total_exc = 0
-    # Calculate users total ranking and number of excellents
-    for key in score_dict:
-        total_ranking = total_ranking + float(score_dict[key][1])
-        if float(score_dict[key][1]) <= 0.1:
-            total_exc += 1
-    # Update total annotations label
-    user.ids.total.text = str(total_annos)
+
     try:
         # Calculate user's lifetime ranking (compared to machine learning score for signal)
         avg_ranking = 100 - int((total_ranking / total_annos) * 100)
+        user.ids.ranking.text = str(avg_ranking) + '%'
     except ZeroDivisionError:
         return
-    # Update user ranking label
-    user.ids.ranking.text = str(avg_ranking) + '%'
 
 
 def update_other_achievement():
     """Updates trophy and progess bar for non-standard achievements"""
-    global tutorial_check, avg_ranking, achievement
+    global tutorial_check, avg_ranking, achievement, time_check
     # User has completed tutorial achievement
     if tutorial_check:
-        achievement.tut_badge.ids.trophy.source = 'tut_compl.png'
+        achievement.tut_badge.ids.trophy.source = 'pictures/tut_compl.png'
         achievement.tut_badge.ids.pb.max = 1
         achievement.tut_badge.ids.pb.value = 1
 
+    if time_check:
+        achievement.night_badge.ids.trophy.source = 'pictures/trophy_night.png'
+        achievement.night_badge.ids.pb.max = 1
+        achievement.night_badge.ids.pb.value = 1
+
     # Average ranking achievement
     if avg_ranking >= 90:
-        achievement.ranking_badge.ids.trophy.source = 'ranking_90.png'
+        achievement.ranking_badge.ids.trophy.source = 'pictures/ranking_90.png'
         achievement.ranking_badge.ids.pb.max = 90
     elif avg_ranking >= 75:
-        achievement.ranking_badge.ids.trophy.source = 'ranking_75.png'
+        achievement.ranking_badge.ids.trophy.source = 'pictures/ranking_75.png'
         achievement.ranking_badge.ids.pb.max = 90
     elif avg_ranking >= 50:
-        achievement.ranking_badge.ids.trophy.source = 'ranking_50.png'
+        achievement.ranking_badge.ids.trophy.source = 'pictures/ranking_50.png'
         achievement.ranking_badge.ids.pb.max = 75
     elif avg_ranking >= 25:
-        achievement.ranking_badge.ids.trophy.source = 'ranking_25.png'
+        achievement.ranking_badge.ids.trophy.source = 'pictures/ranking_25.png'
         achievement.ranking_badge.ids.pb.max = 50
     achievement.ranking_badge.ids.pb.value = avg_ranking
 
@@ -1187,16 +1187,16 @@ def update_std_achievements(var, badge):
     """Updates trophy and progress bar for achievements following the '1, 10, 25, 50' format"""
     # Total number of lifetime annotations achievement
     if var >= 50:
-        badge.ids.trophy.source = 'trophy_50.png'
+        badge.ids.trophy.source = 'pictures/trophy_50.png'
         badge.ids.pb.max = 50
     elif var >= 25:
-        badge.ids.trophy.source = 'trophy_25.png'
+        badge.ids.trophy.source = 'pictures/trophy_25.png'
         badge.ids.pb.max = 50
     elif var >= 10:
-        badge.ids.trophy.source = 'trophy_10.png'
+        badge.ids.trophy.source = 'pictures/trophy_10.png'
         badge.ids.pb.max = 25
     elif var >= 1:
-        badge.ids.trophy.source = 'trophy_1.png'
+        badge.ids.trophy.source = 'pictures/trophy_1.png'
         badge.ids.pb.max = 10
     # Update progress bar
     badge.ids.pb.value = var
@@ -1221,21 +1221,5 @@ class ScorePicturesApp(App):
 
 # Run app
 if __name__ == '__main__':
-
-    with open('scorepictures.kv', 'r') as file:
-        instructions_kv_str = file.read().replace('\n', '')
-
-    pattern = re.compile("<InstructionScreen\d>:")
-    pages = len(re.findall(pattern, instructions_kv_str))
-
-    for i in range(1, pages + 1):
-        class_name = "InstructionScreen" + str(i)
-        globals()[class_name] = type(class_name, (), dict_from_class(Screen))
-        globals()["inst" + str(i)] = globals()[class_name]()
-        print(type(globals()["inst" + str(i)]))
-
-    print(type(inst1))
-    print(type(InstructionScreen1))
-    print(type(Screen))
 
     ScorePicturesApp().run()
