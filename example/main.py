@@ -569,6 +569,7 @@ class TutorialScreen(Screen):
         # Add all pictures in tutorial folder to list
         for filename in glob(join(curdir, 'tutorial', '*')):
             self.pictures.append(filename)
+        print(self.pictures)
         # Pull out all solution pictures into a separate list
         for filename in glob(join(curdir, 'tutorial', '*_soln.png')):
             self.solutions.append(filename)
@@ -694,6 +695,7 @@ class TutorialScreen(Screen):
                     self.ids.float.remove_widget(self.ids.display)
                     self.ids.label.text = ''
                     self.ids.float.add_widget(self.ids.image, index=2)
+                    self.next()
                     self.soln_current = self.solutions.pop(0)
                     self.ids.image.source = self.soln_current
                     self.ids.grid.remove_widget(self.ids.empty)
