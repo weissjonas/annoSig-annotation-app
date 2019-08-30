@@ -4,6 +4,7 @@ __pycache__/
 
 # buildozer
 .buildozer/
+bin/
 
 # editor
 .vscode/

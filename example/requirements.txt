@@ -1,0 +1,4 @@
+buildozer==0.39
+Cython==0.29.13
+Kivy==1.11.1
+

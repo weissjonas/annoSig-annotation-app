@@ -114,3 +114,74 @@ Farming gives you raw materials that you can use to automate the farming of a re
 
 Problem:
 - The player is motivated to farm the currency, not to annotate correctly.
+
+
+## Installation
+
+You should use a virtualenv for python, then:
+```sh
+cd example
+pip install -r requirements.txt
+```
+
+### Run on Android
+
+#### Install dependencies (Ubuntu)
+
+There are actually two lists of dependencies: [`buildozer` docs](https://buildozer.readthedocs.io/en/latest/installation.html#targeting-android) and [`buildozer` Dockerfile](https://github.com/kivy/buildozer/blob/master/Dockerfile#L45-L65)
+If you want to be sure, install both.
+
+I just installed:
+```sh
+apt install openjdk-8-jdk
+apt install libffi-dev      # dependency compile _ctypes
+apt install adb             # manage android devices
+# apt install ccache        # don't know if this is required
+```
+You probably need some build tools too (`automake etc.`).
+
+Note: If you have different version of Java installed, you have to configure the correct one:
+```sh
+sudo update-alternatives --config javac
+sudo update-alternatives --config java
+```
+
+
+#### Install dependencies (Windows)
+
+**TODO**
+
+
+#### Deploy
+
+Before you can deploy to Android, you have to 
+1. Enable USB-Debugging on your phone. The setting is located in the developer menu which can be enabled by tapping repeatedly on the kernel version in your phone settings software information.
+2. Authorize the computer. You will get a dialog on your phone on the first deploy.
+
+Then run:
+```sh
+cd example
+buildozer android debug   # build the debug target
+buildozer android deploy  # push app to phone
+buildozer android run     # start
+```
+
+The steps can also be combiled:
+```sh
+buildozer android debug deploy run
+```
+
+To show logs, i.e. `print()` statements:
+```sh
+buildozer android logcat
+```
+
+The build `.apk` can now also be found in `bin/`.
+
+
+### Run on Desktop
+
+```sh
+cd example
+python main.py
+```
