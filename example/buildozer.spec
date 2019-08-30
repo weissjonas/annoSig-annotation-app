@@ -7,7 +7,7 @@ title = Anno5i9
 package.name = anno5i9
 
 # (str) Package domain (needed for android/ios packaging)
-package.domain = org.test
+package.domain = de.tudresden.ibtm
 
 # (str) Source code where the main.py live
 source.dir = .
@@ -86,7 +86,7 @@ fullscreen = 0
 #android.presplash_color = #FFFFFF
 
 # (list) Permissions
-#android.permissions = INTERNET, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE
+android.permissions = INTERNET, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE
 
 # (int) Target Android API, should be as high as possible.
 #android.api = 27
@@ -193,7 +193,7 @@ fullscreen = 0
 #android.library_references =
 
 # (str) Android logcat filters to use
-#android.logcat_filters = *:S python:D
+android.logcat_filters = *:S python:D
 
 # (bool) Copy library instead of making a libpymodules.so
 #android.copy_libs = 1

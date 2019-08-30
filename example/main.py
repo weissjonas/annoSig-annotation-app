@@ -7,9 +7,12 @@ from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.uix.widget import WidgetException
 from kivy.graphics import Color, Point, GraphicException
 from kivy.clock import Clock
+from kivy.utils import platform
+
 from glob import glob
 import os
 from os.path import join, dirname
+from pathlib import Path
 from random import randint
 import csv
 from math import sqrt
@@ -125,7 +128,8 @@ class ScreenManage(ScreenManager):
 
         # Check if it is user's first time using app
         self.empty = True
-        with open(join(curdir, 'csv', 'user_score.csv'), mode='r') as score_data:
+        csvdir = App.get_running_app().csvdir
+        with open(os.path.join(csvdir, 'user_score.csv'), mode='r') as score_data:
             reader = csv.reader(score_data)
             for row in reader:
                 if row != '':
@@ -172,7 +176,8 @@ class StartScreen(Screen):
             # Display welcome message after first launch
             menu.ids.welcome_label.text = 'Welcome ' + username + '!'
             # Write username to csv file
-            with open(join(curdir, 'csv', 'user_score.csv'), mode='a', newline='') as score_data:
+            csvdir = App.get_running_app().csvdir
+            with open(os.path.join(csvdir, 'user_score.csv'), mode='a', newline='') as score_data:
                 writer = csv.writer(score_data)
                 writer.writerow(['', user_id, '', '', '', username])
         else:
@@ -246,7 +251,8 @@ class AnnotateScreen(Screen):
         for filename in glob(join(curdir, 'images', '*')):
             self.pictures.append(filename)
         # Remove any pictures that have already been annotated
-        with open(join(curdir, 'csv', 'user_score.csv'), mode='r') as score_data:
+        csvdir = App.get_running_app().csvdir
+        with open(os.path.join(csvdir, 'user_score.csv'), mode='r') as score_data:
             reader = csv.reader(score_data)
             for row in reader:
                 # Get user's id
@@ -398,7 +404,8 @@ class AnnotateScreen(Screen):
         global total_counter, continue_trigger
         try:
             # Write picture name and score to csv
-            with open(join(curdir, 'csv', 'user_score.csv'), mode='a', newline='') as score_data:
+            csvdir = App.get_running_app().csvdir
+            with open(os.path.join(csvdir, 'user_score.csv'), mode='a', newline='') as score_data:
                 writer = csv.writer(score_data)
                 writer.writerow([self.date.strftime("%d-%m-%Y %H.%M"), user_id, ntpath.basename(self.current), score,
                                  self.ranking, ''])
@@ -836,7 +843,8 @@ class TutorialScreen(Screen):
             self.manager.current = 'tutorialend'
             self.manager.transition.direction = 'left'
             # Record if user has completed the tutorial
-            with open(join(curdir, 'csv', 'user_score.csv'), mode='r+', newline='') as score_data:
+            csvdir = App.get_running_app().csvdir
+            with open(os.path.join(csvdir, 'user_score.csv'), mode='r+', newline='') as score_data:
                 reader = csv.reader(score_data)
                 writer = csv.writer(score_data)
                 # Check if user has previously completed the tutorial
@@ -1022,7 +1030,8 @@ class SettingsScreen(Screen):
             # Reset welcome label on menu screen with new username
             menu.ids.welcome_label.text = 'Welcome ' + username +'!'
             # Write new username in user_scores.csv file
-            with open(join(curdir, 'csv', 'user_score.csv'), mode='a', newline='') as score_data:
+            csvdir = App.get_running_app().csvdir
+            with open(os.path.join(csvdir, 'user_score.csv'), mode='a', newline='') as score_data:
                 writer = csv.writer(score_data)
                 writer.writerow(['', user_id, '', '', '', username])
         else:
@@ -1111,7 +1120,8 @@ def update_rankings():
     # Update continue trigger on settings screen
     settings.ids.cont_num.text = str(continue_trigger)
     # Read csv file
-    with open(join(curdir, 'csv', 'user_score.csv'), mode='r') as score_data:
+    csvdir = App.get_running_app().csvdir
+    with open(os.path.join(csvdir, 'user_score.csv'), mode='r') as score_data:
         reader = csv.reader(score_data)
         time = []
         for row in reader:
@@ -1206,6 +1216,31 @@ def update_std_achievements(var, badge):
 
 # Create app class
 class ScorePicturesApp(App):
+    def __init__(self):
+        super().__init__()
+
+        if platform == 'android':
+            from android.permissions import request_permissions, check_permission, Permission
+
+            print('Getting permissions...')
+            permissions = [
+                Permission.WRITE_EXTERNAL_STORAGE,
+                Permission.READ_EXTERNAL_STORAGE,
+            ]
+            request_permissions(permissions)
+
+            from android.storage import primary_external_storage_path
+            primary_ext_storage = primary_external_storage_path()
+
+            # Make sure user scores file exists
+            self.csvdir = os.path.join(primary_ext_storage, 'anno5i9')
+            Path(self.csvdir).mkdir(exist_ok=True)
+            user_score = Path(self.csvdir) / 'user_score.csv'
+            user_score.touch()
+
+        else:
+            self.csvdir = os.path.join(os.path.dirname(__file__), 'csv')
+
     def build(self):
         global screen_manager
         self.title = 'anno5i9 v0.1'
@@ -1219,7 +1254,6 @@ class ScorePicturesApp(App):
     def on_resume(self):
         """Resume app when switching from another app"""
         return True
-
 
 # Run app
 if __name__ == '__main__':
