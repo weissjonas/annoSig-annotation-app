@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# buildozer
+.buildozer/
+
+# editor
+.vscode/
+
+# user specific
+.envrc
+.direnv/
