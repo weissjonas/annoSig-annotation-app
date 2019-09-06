@@ -10,5 +10,5 @@ bin/
 .vscode/
 
 # user specific
-.envrc
-.direnv/
+**/.envrc
+**/.direnv/

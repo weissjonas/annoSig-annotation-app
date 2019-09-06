@@ -140,7 +140,34 @@ apt install adb             # manage android devices
 ```
 You probably need some build tools too (`automake etc.`).
 
-Note: If you have different version of Java installed, you have to configure the correct one:
+**Note:** If you have multiple versions of Java installed, you might get this error:
+
+```
+# Android NDK installation done.
+# Installing/updating SDK platform tools if necessary
+# Run '/home/jonas/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager tools platform-tools'
+# Cwd /home/jonas/.buildozer/android/platform/android-sdk
+Exception in thread "main" java.lang.NoClassDefFoundError: javax/xml/bind/annotation/XmlSchema
+	at com.android.repository.api.SchemaModule$SchemaModuleVersion.<init>(SchemaModule.java:156)
+	at com.android.repository.api.SchemaModule.<init>(SchemaModule.java:75)
+	at com.android.sdklib.repository.AndroidSdkHandler.<clinit>(AndroidSdkHandler.java:81)
+	at com.android.sdklib.tool.sdkmanager.SdkManagerCli.main(SdkManagerCli.java:73)
+	at com.android.sdklib.tool.sdkmanager.SdkManagerCli.main(SdkManagerCli.java:48)
+Caused by: java.lang.ClassNotFoundException: javax.xml.bind.annotation.XmlSchema
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:583)
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:178)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:521)
+	... 5 more
+# Command failed: /home/jonas/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager tools platform-tools
+# 
+# Buildozer failed to execute the last command
+# The error might be hidden in the log above this error
+# Please read the full log, and search for it before
+# raising an issue with buildozer itself.
+# In case of a bug report, please add a full log with log_level = 2
+```
+
+You have to configure JDK 8 as the default:
 ```sh
 sudo update-alternatives --config javac
 sudo update-alternatives --config java
@@ -151,6 +178,9 @@ sudo update-alternatives --config java
 
 **TODO**
 
+```sh
+apt install xclip
+```
 
 #### Deploy
 
