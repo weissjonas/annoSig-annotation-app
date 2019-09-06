@@ -1,28 +1,30 @@
+import csv
+import datetime
+import os
+import re
+from functools import partial
+from glob import glob
+from math import sqrt
+from os.path import dirname, join
+from pathlib import Path
+from random import randint
+import traceback
+
 from kivy.app import App
+from kivy.clock import Clock
+from kivy.core.window import Window
+from kivy.graphics import Color, GraphicException, Point
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
-from kivy.core.window import Window
 from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.uix.widget import WidgetException
-from kivy.graphics import Color, Point, GraphicException
-from kivy.clock import Clock
 from kivy.utils import platform
 
-from glob import glob
-import os
-from os.path import join, dirname
-from pathlib import Path
-from random import randint
-import csv
-from math import sqrt
-import ntpath
-import datetime
-from functools import partial
-import re
-
+import requests
 
 # Store user_id and username in global variable
+# TODO: Read username and userid from file system
 user_id = None
 username = ''
 # Create global variables to access screens
@@ -167,6 +169,9 @@ class StartScreen(Screen):
         # Set username to text entered by user
         username = self.ids.textinput.text
         # Make sure user enters a username
+        # TODO: Fix username and user_id generation
+            # TODO: make persistent
+            # TODO: use guid
         if username != '':
             # Switch to menu screen
             self.manager.current = 'menu'
@@ -241,8 +246,7 @@ class AnnotateScreen(Screen):
         global user_id, username, total_counter, score_dict, continue_trigger, is_finished
         # Initialize counter to track how many pictures are done in each grouping
         self.counter = 0
-        # Create variable to store current date
-        self.date = datetime.datetime.now()
+        self.display_start_time = datetime.datetime.now()
         # Create list to house pictures
         self.pictures = []
         # Create variable to store machine score of signals
@@ -261,7 +265,7 @@ class AnnotateScreen(Screen):
                 if row[5] != '':
                     username = row[5]
                 for pic in self.pictures:
-                    if row[2] == ntpath.basename(pic):
+                    if row[2] == Path(pic).name:
                         self.pictures.remove(pic)
         # Get total number of pictures to gauge progress
         self.prog_max = len([filename for filename in glob(join(curdir, 'images', '*'))])
@@ -291,11 +295,14 @@ class AnnotateScreen(Screen):
         super(AnnotateScreen, self).on_touch_down(touch)
         global lines, line_color
         self.coord = [touch.x, touch.y]
+        self.annotation_start_time = datetime.datetime.now()
+
         try:
             # Reset maching score ranking
             self.ids.ranking.text = ''
         # Prevent error when click on end screen
         except AttributeError:
+            print(traceback.format_exc())
             return True
         # Draw swipe line on canvas
         with self.ids.display.canvas:
@@ -345,18 +352,21 @@ class AnnotateScreen(Screen):
                     # Store group name of each point
                     self.groups.append(str(group))
             except GraphicException:
+                print(traceback.format_exc())
                 pass
         try:
             # Update score label
             self.update_label(touch)
         # Avoid app crashing from user touch on end screen
         except AttributeError:
+            print(traceback.format_exc())
             return
 
     def on_touch_up(self, touch):
         """Calculate the user score based on the direction of their touch and ensure the movement was big enough"""
         super(AnnotateScreen, self).on_touch_up(touch)
         global lines
+        self.annotation_end_time = datetime.datetime.now()
 
         if touch.grab_current is not self:
             return
@@ -397,6 +407,7 @@ class AnnotateScreen(Screen):
                 self.ids.ranking.text = 'Try Again'
         # Prevent crashing from user touches on end screen
         except (AttributeError, TypeError):
+            print(traceback.format_exc())
             return
 
     def change_image(self, score=None):
@@ -407,19 +418,37 @@ class AnnotateScreen(Screen):
             csvdir = App.get_running_app().csvdir
             with open(os.path.join(csvdir, 'user_score.csv'), mode='a', newline='') as score_data:
                 writer = csv.writer(score_data)
-                writer.writerow([self.date.strftime("%d-%m-%Y %H.%M"), user_id, ntpath.basename(self.current), score,
-                                 self.ranking, ''])
+                # TODO: Remove local csv
+                writer.writerow([
+                    self.display_start_time.isoformat(), 
+                    user_id, 
+                    Path(self.current).name, 
+                    score,
+                    self.ranking,
+                    ''
+                ])
+                requests.post('http://127.0.0.1:5000/upload?user=user123', json={
+                    'user_id': user_id,
+                    # 'user_level':   # Maybe use annotation for that
+                    'display_start_time': self.display_start_time.isoformat(),
+                    'annotation_start_time': self.annotation_start_time.isoformat(),
+                    'annotation_end_time': self.annotation_end_time.isoformat(),
+                    'picture_name': Path(self.current).name,
+                    'score': score,
+                    'ranking': self.ranking,
+                })
             # Find score assigned by machine learner
             with open(join(curdir, 'csv', 'machine_score.csv'), mode='r') as machine:
                 reader = csv.reader(machine)
                 for row in reader:
-                    if row[0] == ntpath.basename(self.current):
+                    if row[0] == Path(self.current).name:
                         if row[1] != '':
                             self.machine_score = row[1]
                         else:
                             self.machine_score = ''
         # Avoid app crashing from user touch on end screen
         except AttributeError:
+            print(traceback.format_exc())
             return
         # If no pictures left call end screen
         if len(self.pictures) == 0:
@@ -519,6 +548,7 @@ class AnnotateScreen(Screen):
                 self.pictures.insert(0, self.save_current)
 
         except IndexError:
+            print(traceback.format_exc())
             return
 
     def cont_screen(self, *args):
@@ -602,6 +632,7 @@ class TutorialScreen(Screen):
             self.ids.ranking.text = ''
         # Prevent error when click on end screen
         except AttributeError:
+            print(traceback.format_exc())
             return True
 
         with self.ids.display.canvas:
@@ -644,6 +675,7 @@ class TutorialScreen(Screen):
                     self.groups.append(str(group))
 
             except GraphicException:
+                print(traceback.format_exc())
                 pass
 
         try:
@@ -651,6 +683,7 @@ class TutorialScreen(Screen):
 
         # Avoid app crashing from user touch on end screen
         except AttributeError:
+            print(traceback.format_exc())
             return
 
     def on_touch_up(self, touch):
@@ -674,7 +707,7 @@ class TutorialScreen(Screen):
             with open(join(curdir, 'csv','tutorial_score.csv'), mode='r') as machine:
                 reader = csv.reader(machine)
                 for row in reader:
-                    if row[0] == ntpath.basename(self.current):
+                    if row[0] == Path(self.current).name:
                         if row[1] != '':
                             self.machine_score = row[1]
                         else:
@@ -712,6 +745,7 @@ class TutorialScreen(Screen):
 
                 # Prevent crashing from drag on solution screen
                 except (WidgetException, IndexError):
+                    print(traceback.format_exc())
                     return
 
             # Recenter display picture if drag is too small
@@ -723,6 +757,7 @@ class TutorialScreen(Screen):
                     self.ids.ranking.text = 'Try Again'
         # Prevent crashing from user touches on end screen
         except (AttributeError, TypeError):
+            print(traceback.format_exc())
             return
 
     def update_label(self, touch):
@@ -834,6 +869,7 @@ class TutorialScreen(Screen):
                     # Change the tracker to indicate it is now on a solution picture
                     self.tracker = 'soln'
         except IndexError:
+            print(traceback.format_exc())
             return
 
     def next(self, *args):
@@ -1155,14 +1191,13 @@ def update_rankings():
             if float(score_dict[key][1]) <= 0.1:
                 total_exc += 1
     except KeyError:
+        print(traceback.format_exc())
         return
 
-    try:
+    if total_annos > 0:
         # Calculate user's lifetime ranking (compared to machine learning score for signal)
         avg_ranking = 100 - int((total_ranking / total_annos) * 100)
         user.ids.ranking.text = str(avg_ranking) + '%'
-    except ZeroDivisionError:
-        return
 
 
 def update_other_achievement():
@@ -1240,6 +1275,9 @@ class ScorePicturesApp(App):
 
         else:
             self.csvdir = os.path.join(os.path.dirname(__file__), 'csv')
+
+        # TODO: Load username here if file exists, else create user_id here
+
 
     def build(self):
         global screen_manager
