@@ -20,6 +20,7 @@ from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.uix.widget import WidgetException
 from kivy.utils import platform
+from kivy.uix.togglebutton import ToggleButton
 
 import requests
 
@@ -27,6 +28,8 @@ import requests
 # TODO: Read username and userid from file system
 user_id = None
 username = ''
+profession = 'other'
+
 # Create global variables to access screens
 user = None
 menu = None
@@ -67,7 +70,7 @@ is_finished = False
 # Keep track of last screen
 last_screen = None
 # Number of signals to annotate before triggering continue screen
-continue_trigger = 10
+continue_trigger = 120
 # Store directory name in a variable
 curdir = dirname(__file__)
 
@@ -162,8 +165,10 @@ def dict_from_class(cls):
         )
 
 
+
 class StartScreen(Screen):
     def menu_screen(self, *args):
+        print('menu_screen called!')
         """Switch to menu screen on button press and writes user data to user_score.csv"""
         global username, user_id, menu
         # Set username to text entered by user
@@ -187,6 +192,12 @@ class StartScreen(Screen):
                 writer.writerow(['', user_id, '', '', '', username])
         else:
             return
+    def set_profession(self,prof):
+        global profession
+        print(profession)
+        profession = prof
+        print(profession)
+        
 
 
 class UserScreen(Screen):

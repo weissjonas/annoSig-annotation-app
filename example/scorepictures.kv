@@ -7,22 +7,38 @@
         Image:
             source: 'pictures/logo.png'
         GridLayout:
-            cols: 2
-            padding: (Window.width/5, Window.height/11)
-            spacing: (Window.width/30, Window.height/12)
-            size_hint_y: 0.4
-            TextLabel:
-                text: 'Username: '
+            cols:1
+            padding: (Window.width/20, Window.height/20)
             TextInput:
+                width: Window.width/3
                 id: textinput
                 multiline: False
                 cursor_color: (0, 0, 128, 1)
                 hint_text: 'Please Enter a Username'
                 size_hint_y: 0.15
+            TextLabel:
+                text: 'I am a:'
+                size_hint: (1, 0.1)
+        GridLayout:
+            padding: (Window.width/20, Window.height/20)
+            row_default_height: Window.height/8
+            row_force_default: True
+            cols: 3
+            ToggleButton:
+                text: 'physician \n (student)'
+                group: 'prof'
+                on_release: root.set_profession('medical (student)')
+            ToggleButton:
+                text: 'biomedical engineer \n (student)'
+                group: 'prof'
+                on_release: root.set_profession('biomedical engineer (student)')
+            ToggleButton:
+                text: 'non of this'
+                group: 'prof'
+                state: 'down'
+                on_release: root.set_profession('other')
         GridLayout:
             cols: 1
-            padding: (Window.width/2.5, Window.height/20)
-            spacing: (Window.width/20, Window.height/20)
             size_hint_y: 0.3
             SwitchButton:
                 text: 'Menu'
