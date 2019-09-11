@@ -1,0 +1,730 @@
+#:import Window kivy.core.window.Window
+
+<StartScreen>:
+    name: 'start'
+    BoxLayout:
+        orientation: 'vertical'
+        Image:
+            source: 'pictures/logo.png'
+        GridLayout:
+            cols:1
+            padding: (Window.width/20, Window.height/20)
+            TextInput:
+                width: Window.width/3
+                id: textinput
+                multiline: False
+                cursor_color: (0, 0, 128, 1)
+                hint_text: 'Please Enter a Username'
+                size_hint_y: 0.15
+            TextLabel:
+                text: 'I am a:'
+                size_hint: (1, 0.1)
+        GridLayout:
+            padding: (Window.width/20, Window.height/20)
+            row_default_height: Window.height/8
+            row_force_default: True
+            cols: 3
+            ToggleButton:
+                text: 'physician \n (student)'
+                group: 'prof'
+                on_release: root.set_profession('medical (student)')
+            ToggleButton:
+                text: 'biomedical engineer \n (student)'
+                group: 'prof'
+                on_release: root.set_profession('biomedical engineer (student)')
+            ToggleButton:
+                text: 'non of this'
+                group: 'prof'
+                state: 'down'
+                on_release: root.set_profession('other')
+        GridLayout:
+            cols: 1
+            size_hint_y: 0.3
+            SwitchButton:
+                text: 'Menu'
+                on_press: root.menu_screen()
+
+<MenuScreen>:
+    name: 'menu'
+    BoxLayout:
+        orientation: 'vertical'
+        GridLayout:
+            cols: 1
+            Image:
+                source: 'pictures/logo.png'
+        GridLayout:
+            cols: 1
+            padding: (Window.width/3, Window.height/30)
+            size_hint: (1, 0.5)
+            spacing: 5
+            TextLabel:
+                id: welcome_label
+                text: 'Welcome ' + root.username + '!'
+            SwitchButton:
+                text: 'Instructions'
+                on_press: root.inst_screen()
+            SwitchButton:
+                text: 'Start'
+                on_press: root.anno_screen()
+            SwitchButton:
+                text: 'User Profile'
+                on_press: root.user_screen()
+
+<AnnotateScreen>:
+    name: 'annotate'
+    display: display.__self__
+    Widget:
+        canvas:
+    BoxLayout:
+        orientation: 'vertical'
+        FloatLayout:
+            id: float
+            Image:
+                id: display
+            GridLayout:
+                cols: 4
+                size_hint: (1, 0.2)
+                padding: (50, 0)
+                spacing: (Window.width / 15, 0)
+                pos: (20, Window.height * 0.8)
+                ProgressBar:
+                    id: pb
+                GridLayout:
+                    cols: 2
+                    size_hint: (0.5, 0.2)
+                    Label:
+                        text: 'Score:'
+                        color: (0, 0, 0, 1)
+                        size_hint_x: 0.1
+                        font_size: Window.height/25
+                    Label:
+                        id: score
+                        size_hint_x: 0.1
+                        font_size: Window.height/15
+                        bold: True
+                GridLayout:
+                    cols: 2
+                    size_hint: (0.5, 0.2)
+                    spacing: 150
+                    Label:
+                        text: 'Your Ranking:    '
+                        color: (0, 0, 0, 1)
+                        size_hint_x: 0.1
+                        font_size: Window.height/25
+                    TextLabel:
+                        id: ranking
+        GridLayout:
+            rows: 1
+            size_hint_y: 0.12
+            spacing: (Window.width/40, Window.height/50)
+            padding: (Window.width/30, Window.height/50)
+            TextLabel:
+                size_hint_x: 1
+            SwitchButton:
+                text: 'Menu'
+                size_hint: (1, 0.2)
+                on_press:
+                    root.manager.current = 'menu'
+                    root.manager.transition.direction = 'right'
+            SwitchButton:
+                text: 'Undo'
+                size_hint: (1, 0.2)
+                on_press: root.undo()
+            SwitchButton:
+                text: 'Skip'
+                size_hint: (1, 0.2)
+                on_press: root.skip ()
+            SwitchButton:
+                text: 'Examples'
+                size_hint: (1, 0.2)
+                on_press:
+                    root.manager.current = 'example'
+                    root.manager.transition.direction = 'left'
+
+<InstructionScreen1>:
+    name: 'inst1'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: (20, 0)
+        TextLabel:
+            text: 'Layout of Annotation Screen'
+            size_hint: (1, 0.2)
+        Image:
+            source: 'pictures/tut_1.png'
+        GridLayout:
+            cols: 3
+            rows: 1
+            size_hint: (1, 0.15)
+            padding: (Window.width/50, 10)
+            spacing: (Window.width/5, 10)
+            SwitchButton:
+                id: menu_button
+                text: 'Menu'
+                size_hint_x: 0.2
+                on_press:
+                    root.manager.current = 'menu'
+                    root.manager.transition.direction = 'right'
+            Label:
+                size_hint_x: 0.2
+            SwitchButton:
+                id: next_button
+                text: 'Next'
+                size_hint_x: 0.2
+                on_press:
+                    root.manager.current = 'inst2'
+                    root.manager.transition.direction = 'left'
+
+
+<InstructionScreen2>:
+    name: 'inst2'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: (20, 0)
+        TextLabel:
+            text: 'Annotate the signal by swiping it to the right of the screen and assigning it a score'
+            text_size: (1000, None)
+            size_x: Window.width
+            size_hint: (1, 0.2)
+        Image:
+            id: image
+            source: 'pictures/tut_2.png'
+        GridLayout:
+            cols: 3
+            rows: 1
+            size_hint: (1, 0.15)
+            padding: (Window.width/50, 10)
+            spacing: (Window.width/5, 10)
+            SwitchButton:
+                id:'menu_button'
+                text: 'Menu'
+                size_hint_x: 0.2
+                on_press:
+                    root.manager.current = 'menu'
+                    root.manager.transition.direction = 'right'
+            SwitchButton:
+                id: 'back_button'
+                text: 'Back'
+                size_hint_x: 0.2
+                on_press:
+                    root.manager.current = 'inst1'
+                    root.manager.transition.direction = 'right'
+            SwitchButton:
+                id:'next_button'
+                text: 'Next'
+                size_hint_x: 0.2
+                on_press:
+                    root.manager.current = 'inst3'
+                    root.manager.transition.direction = 'left'
+
+
+<InstructionScreen3>:
+    name: 'inst3'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: (20, 0)
+        TextLabel:
+            text: 'The fetal heartbeats appear in between the maternal beats'
+            text_size: (1000, None)
+            size_x: Window.width
+            size_hint: (1, 0.2)
+        Image:
+            id: image
+            source: 'pictures/tut_3.png'
+        GridLayout:
+            cols: 3
+            rows: 1
+            size_hint: (1, 0.15)
+            padding: (Window.width/50, 10)
+            spacing: (Window.width/5, 10)
+            SwitchButton:
+                id:'menu_button'
+                text: 'Menu'
+                size_hint_x: 0.2
+                on_press:
+                    root.manager.current = 'menu'
+                    root.manager.transition.direction = 'right'
+            SwitchButton:
+                id: 'back_button'
+                text: 'Back'
+                size_hint_x: 0.2
+                on_press:
+                    root.manager.current = 'inst2'
+                    root.manager.transition.direction = 'right'
+            SwitchButton:
+                id:'next_button'
+                text: 'Start \n Tutorial'
+                size_hint_x: 0.2
+                on_press:
+                    root.manager.current = 'tutorial'
+                    root.manager.transition.direction = 'left'
+
+
+<ExampleScreen>:
+    name: 'example'
+    BoxLayout:
+        padding: (Window.width/30, 0)
+        ScrollView:
+            size_hint: (1, None)
+            size: (Window.width, Window.height)
+            GridLayout:
+                cols: 1
+                size_hint_y: None
+                padding: Window.width/30
+                height: self.minimum_height
+                GridLayout:
+                    cols: 2
+                    padding: (0, Window.height/30)
+                    size_hint_y: None
+                    height: Window.height/7
+                    SwitchButton:
+                        text: 'Back'
+                        size_hint_x: 0.15
+                        on_press: root.back_screen()
+                    TitleText:
+                        text: 'Examples'
+                GridLayout:
+                    cols: 2
+                    size_hint_y: None
+                    height: Window.height*1.5
+                    padding: (Window.width/30, 0)
+                    Image:
+                        source: 'pictures/good.png'
+                    TextLabel:
+                        text: 'Good: '
+                    Image:
+                        source: 'pictures/unclear.png'
+                    TextLabel:
+                        text: 'Unclear: '
+                    Image:
+                        source: 'pictures/bad.png'
+                    TextLabel:
+                        text: 'Bad: '
+
+
+<TutorialScreen>:
+    image: image.__self__
+    display: display.__self__
+    empty: empty.__self__
+    next_button: next_button.__self__
+    name: 'tutorial'
+    BoxLayout:
+        orientation: 'vertical'
+        FloatLayout:
+            id: float
+            Image:
+                id: display
+            Image:
+                id: image
+            GridLayout:
+                id: grid
+                cols: 4
+                size_hint: (1, 0.25)
+                padding: (Window.width/30, Window.height/15)
+                spacing: (Window.width/15, 0)
+                pos: (20, Window.height*0.8)
+                ProgressBar:
+                    id: pb
+                    max: 10
+                GridLayout:
+                    cols: 2
+                    size_hint: (0.5, 0.2)
+                    spacing: 10
+                    Label:
+                        text: 'Score:'
+                        color: (0, 0, 0, 1)
+                        size_hint_x: 0.1
+                        font_size: Window.height/25
+                    Label:
+                        id: score
+                        size_hint_x: 0.1
+                        font_size: Window.height/15
+                        bold: True
+                GridLayout:
+                    cols: 2
+                    size_hint: (0.5, 0.2)
+                    spacing: 150
+                    Label:
+                        text: 'Your Ranking:    '
+                        color: (0, 0, 0, 1)
+                        size_hint_x: 0.1
+                        font_size: Window.height/25
+                    TextLabel:
+                        id: ranking
+                Label:
+                    id: empty
+                    size_hint: (0.4, 0.1)
+                SwitchButton:
+                    id: next_button
+                    text: 'Next'
+                    size_hint: (0.4, 0.1)
+                    on_press: root.next()
+
+        GridLayout:
+            rows: 1
+            size_hint_y: 0.12
+            spacing: (Window.width/40, Window.height/50)
+            padding: (Window.width/25, Window.height/50)
+            Label:
+                id: label
+                text: 'Try annotating this signal!'
+                color: (1, 0, 0, 1)
+                font_size: Window.height/35
+                size_hint_x: 1
+            SwitchButton:
+                text: 'Menu'
+                size_hint: (1, 0.2)
+                on_press:
+                    root.manager.current = 'menu'
+                    root.manager.transition.direction = 'right'
+            SwitchButton:
+                text: 'Undo'
+                size_hint: (1, 0.2)
+                on_press: root.undo()
+            SwitchButton:
+                text: 'Skip'
+                size_hint: (1, 0.2)
+                on_press: root.skip ()
+            SwitchButton:
+                text: 'Examples'
+                size_hint: (1, 0.2)
+                on_press:
+                    root.manager.current = 'example'
+                    root.manager.transition.direction = 'left'
+
+
+<TutorialEndScreen>:
+    name: 'tutorialend'
+    BoxLayout:
+        orientation: 'vertical'
+        GridLayout:
+            cols: 1
+            padding: Window.height/30
+            spacing: Window.height/30
+            TitleText:
+                text: 'Congratulations!'
+                size_hint_y: 0.2
+            Image:
+                source: 'pictures/tut_compl.png'
+            TextLabel:
+                text: 'You\'ve completed the tutorial! \n You are now ready to start your annotations. \n Please return to the menu to get started!'
+        GridLayout:
+            cols: 1
+            padding: (Window.width/2.5, 40)
+            size_hint: (1, 0.3)
+            SwitchButton:
+                text: 'Menu'
+                size_hint: (0.3, 0.5)
+                on_press:
+                    root.manager.current = 'menu'
+                    root.manager.transition.direction = 'right'
+
+
+<ContScreen>:
+    name: 'cont'
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            id: label_1
+            color: (0, 0, 128, 1)
+            font_size: Window.height / 10
+            bold: True
+            halign: 'center'
+            size_hint_y: 0.2
+        GridLayout:
+            cols: 2
+            spacing: (Window.width/10)
+            padding: (Window.width/5, Window.height/10)
+            Label:
+                text: 'Annotations this session: '
+                color: (0, 0, 128, 1)
+                font_size: Window.height / 20
+                halign: 'center'
+            TextLabel:
+                id: session_annos
+            Label:
+                text: 'Total Annotations: '
+                color: (0, 0, 128, 1)
+                font_size: Window.height / 20
+                halign: 'center'
+            TextLabel:
+                id: tot_annos
+            SwitchButton:
+                text: 'Menu'
+                size_hint: (0.2, 0.7)
+                on_press: root.menu_screen()
+            SwitchButton:
+                text: 'Continue'
+                size_hint: (0.2, 0.7)
+                on_press: root.cont_anno()
+
+
+<UserScreen>:
+    name: 'user'
+    BoxLayout:
+        orientation: 'vertical'
+        Image:
+            source: 'pictures/icon.png'
+        GridLayout:
+            cols: 2
+            padding: (Window.width/5, Window.height/15)
+            spacing: (Window.width/30, Window.height/35)
+            TextLabel:
+                text: 'Username: '
+            TextLabel:
+                id: user
+            TextLabel:
+                text: 'Total Annotations: '
+            TextLabel:
+                id: total
+            TextLabel:
+                text: 'Overall Ranking: '
+            TextLabel:
+                id: ranking
+        GridLayout:
+            cols: 4
+            padding: (Window.width/12, Window.height/40)
+            spacing: (Window.width/30, Window.height/15)
+            size_hint_y: 0.4
+            SwitchButton:
+                text: 'Menu'
+                on_press:
+                    root.manager.current = 'menu'
+                    root.manager.transition.direction = 'right'
+            SwitchButton:
+                text: 'Achievments'
+                on_press:
+                    root.manager.current = 'achievement'
+                    root.manager.transition.direction = 'left'
+            SwitchButton:
+                text: 'Leaderboard'
+                on_press:
+                    root.manager.current = 'leaderboard'
+                    root.manager.transition.direction = 'left'
+            SwitchButton:
+                text: 'Settings'
+                on_press: root.settings_screen()
+
+
+
+<AchievementScreen>:
+    name: 'achievement'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: Window.width/30
+        GridLayout:
+            cols: 2
+            padding: Window.width/30
+            spacing: Window.width/4
+            size_hint_y: 0.2
+            SwitchButton:
+                text: 'Back'
+                size_hint: (0.5, 0.5)
+                on_press:
+                    root.manager.current = 'user'
+                    root.manager.transition.direction = 'right'
+            Label:
+                id: label
+                color: (0, 0, 128, 1)
+                bold: 'True'
+                font_size: Window.height/15
+                halign: 'right'
+        GridLayout:
+            id: grid
+            cols: 2
+            padding: Window.width/30
+            spacing: Window.width/30
+
+
+<LeaderboardScreen>:
+    name: 'leaderboard'
+    BoxLayout:
+        orienation: 'vertical'
+        padding: Window.width/30
+        ScrollView:
+            size_hint: (1, None)
+            size: (Window.width, Window.height)
+            GridLayout:
+                cols: 1
+                spacing: (Window.width/20, Window.height/30)
+                size_hint_y: None
+                padding: Window.width/50
+                GridLayout:
+                    cols: 2
+                    size_hint_y: None
+                    padding: Window.width/30
+                    spacing: Window.width/4
+                    height: Window.height/5
+                    SwitchButton:
+                        text: 'Back'
+                        size_hint_x: 0.5
+                        on_press:
+                            root.manager.current = 'user'
+                            root.manager.transition.direction = 'right'
+                    Label:
+                        text: 'Leaderboard'
+                        color: (0, 0, 128, 1)
+                        bold: 'True'
+                        font_size: Window.height/15
+                        halign: 'right'
+
+<SettingsScreen>:
+    box: box.__self__
+    top_grid: top_grid.__self__
+    grid: grid.__self__
+    user_label: user_label.__self__
+    user: user.__self__
+    textinput: textinput.__self__
+    chang_username_button: change_username_button.__self__
+    cont_label: cont_label.__self__
+    cont_num: cont_num.__self__
+    change_cont_button: change_cont_button.__self__
+    cancel_button: cancel_button.__self__
+    save_changes_button: save_changes_button.__self__
+    change_user_grid: change_user_grid.__self__
+    change_btn_grid: change_btn_grid.__self__
+    name: 'settings'
+    BoxLayout:
+        id: box
+        orientation: 'vertical'
+        padding: (Window.width/30, 0)
+        GridLayout:
+            id: top_grid
+            cols: 2
+            size_hint_y: 0.3
+            padding: Window.width/25
+            spacing: Window.width/10
+            SwitchButton:
+                text: 'Back'
+                size_hint: (0.3, 0.9)
+                on_press: root.back()
+            TitleText:
+                text: 'Settings'
+        GridLayout:
+            id: grid
+            cols: 3
+            spacing: (Window.width/15, Window.height/6)
+            padding: (Window.width/15, Window.height/5)
+            TextLabel:
+                id: user_label
+                text: 'Username: '
+            TextLabel:
+                id: user
+            TextInput:
+                id: textinput
+                multiline: 'False'
+                cursor_color: (0, 0, 128, 1)
+                hint_text: 'Please Enter a Username'
+                size_hint_y: 1
+            SwitchButton:
+                id: change_username_button
+                text: 'Change \n Username'
+                size_hint: (0.6, 0.4)
+                on_press: root.change_username()
+            TextLabel:
+                id: cont_label
+                text: 'Annotations before \n \'Continue\' prompt: '
+            TextLabel:
+                id: cont_num
+            SwitchButton:
+                id: change_cont_button
+                text: 'Change \n Continues'
+                size_hint: (0.6, 0.2)
+                on_press: root.change_continues()
+            SwitchButton:
+                id: cancel_button
+                text: 'Cancel'
+                size_hint: (0.6, 0.2)
+                on_press: root.cancel()
+            SwitchButton:
+                id: save_changes_button
+                text: 'Save \n Changes'
+                size_hint: (0.6, 0.2)
+        GridLayout:
+            id: change_user_grid
+            cols: 2
+            spacing: Window.width/4
+            padding: (Window.width/10, Window.height/5)
+            size_hint_y: 0.6
+        GridLayout:
+            id: change_btn_grid
+            cols: 2
+            spacing: Window.width/4
+            padding: Window.width/12
+            size_hint_y: 0.4
+
+
+<EndScreen>:
+    name: 'end'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: Window.width/20
+        TitleText:
+            id: label
+            text: 'Congratulations'
+            size_hint_y: 0.2
+        TextLabel:
+            text: 'You\'ve annotated all the signals \n currently available! \n More signals will be available soon.'
+        GridLayout:
+            cols: 1
+            padding: (Window.width/3, 0)
+            size_hint_y: 0.15
+            SwitchButton:
+                text: 'Menu'
+                size_hint: (1, 0.2)
+                on_press:
+                    root.manager.current = 'menu'
+                    root.manager.transition.direction = 'right'
+<SwitchButton>:
+    background_normal: 'pictures/navy.png'
+    background_down: 'pictures/pressed.png'
+    font_size: Window.height*0.035
+    bold: 'True'
+    halign: 'center'
+
+<TextLabel>:
+    font_size: Window.height/20
+    color: (0, 0, 128, 1)
+    halign: 'center'
+    bold: True
+    padding: (200, 200)
+
+<TitleText>:
+    font_size: Window.height/10
+    color: (0, 0, 128, 1)
+    bold: True
+    text_size: (Window.width, None)
+    halign: 'center'
+
+<AchievementBadge>:
+    cols: 2
+    size_hint_y: None
+    height: Window.height/5
+    Image:
+        id: trophy
+        size_hint_y: None
+        height: Window.height/5
+    GridLayout:
+        id: grid
+        cols: 1
+        padding: Window.width/30
+        spacing: Window.height/40
+        Label:
+            id: title
+            color: (0, 0, 128, 1)
+            bold: True
+            font_size: Window.height/30
+            size_hint: (1, 1)
+            text_size: (Window.width/3, None)
+            halign: 'center'
+        Label:
+            id: desc
+            color: (0, 0, 128, 1)
+            font_size: Window.height/35
+            size_hint: (1, 1)
+            halign: 'center'
+            text_size: (Window.width/4, None)
+        ProgressBar:
+            id: pb
+
+
+
