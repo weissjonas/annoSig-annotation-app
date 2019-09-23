@@ -1,7 +1,40 @@
 #:import Window kivy.core.window.Window
 
-<StartScreen>:
-    name: 'start'
+<StartScreen1>:
+    name: 'start1'
+    BoxLayout:
+        padding: (Window.width/30, 0)
+        ScrollView:
+            size_hint: (1, None)
+            size: (Window.width, Window.height)
+            GridLayout:
+                cols: 1
+                size_hint_y: None
+                height: Window.height*1.3
+                padding: (Window.width/30, 0)
+                BoxLayout:
+                    orientation: 'vertical'
+                   # Image:
+                   #     source: 'pictures/logo.png'
+                    TextLabel:
+                        text: 'Welcome to this study!'
+                    TextLabel:
+                        text: 'The aim is to test whether it is possible\n to determine the signal quality of fetal ECG data\n by interviewing untrained individuals.'
+                    TextLabel:
+                        text: 'This takes about 10 minutes. No personal data\n is collected in the study.\n If you have any questions or suggestions,\n please feel free to contact me.'
+                    TextLabel:
+                        text: 'Thank you for your time,\n Jonas Weiß (jonas.weiss@tu-dresden.de)'
+                    GridLayout:
+                        cols: 1
+                        padding: (Window.width/5, Window.height/20)
+                        SwitchButton:
+                            text: 'Next'
+                            on_press: root.start_screen2()
+                            size_hint: (0.7, 0.1)
+
+
+<StartScreen2>:
+    name: 'start2'
     BoxLayout:
         orientation: 'vertical'
         Image:
@@ -13,8 +46,9 @@
                 width: Window.width/3
                 id: textinput
                 multiline: False
+                input_type: 'number'
                 cursor_color: (0, 0, 128, 1)
-                hint_text: 'Please Enter a Username'
+                hint_text: 'Please Enter your Age'
                 size_hint_y: 0.15
             TextLabel:
                 text: 'I am a:'
@@ -39,10 +73,11 @@
                 on_release: root.set_profession('other')
         GridLayout:
             cols: 1
-            size_hint_y: 0.3
+            padding: (Window.width/5, Window.height/20)
             SwitchButton:
                 text: 'Menu'
                 on_press: root.menu_screen()
+                size_hint: (0.7, 0.1)
 
 <MenuScreen>:
     name: 'menu'
@@ -144,29 +179,32 @@
             size_hint_y: 0.12
             spacing: (Window.width/40, Window.height/50)
             padding: (Window.width/30, Window.height/50)
-            TextLabel:
-                size_hint_x: 1
             SwitchButton:
                 text: 'Menu'
                 size_hint: (1, 0.2)
                 on_press:
                     root.manager.current = 'menu'
                     root.manager.transition.direction = 'right'
-            SwitchButton:
-                text: 'Undo'
-                size_hint: (1, 0.2)
-                on_press: root.undo()
-            SwitchButton:
-                text: 'Skip'
-                size_hint: (1, 0.2)
-                on_press: root.skip ()
+#            SwitchButton:
+#                text: 'Undo'
+#                size_hint: (1, 0.2)
+#                on_press: root.undo()
+#            SwitchButton:
+#                text: 'Skip'
+#                size_hint: (1, 0.2)
+#                on_press: root.skip ()
             SwitchButton:
                 text: 'Examples'
                 size_hint: (1, 0.2)
                 on_press:
                     root.manager.current = 'example'
                     root.manager.transition.direction = 'left'
-
+            TextLabel:
+                size_hint_x: 1
+            TextLabel:
+                size_hint_x: 1
+            TextLabel:
+                size_hint_x: 1
 <InstructionScreen1>:
     name: 'inst1'
     BoxLayout:
@@ -313,18 +351,18 @@
                     size_hint_y: None
                     height: Window.height*1.5
                     padding: (Window.width/30, 0)
-                    Image:
-                        source: 'pictures/good.png'
                     TextLabel:
                         text: 'Good: '
                     Image:
-                        source: 'pictures/unclear.png'
+                        source: 'pictures/good.png'
                     TextLabel:
                         text: 'Unclear: '
                     Image:
-                        source: 'pictures/bad.png'
+                        source: 'pictures/unclear.png'
                     TextLabel:
                         text: 'Bad: '
+                    Image:
+                        source: 'pictures/bad.png'
 
 
 <TutorialScreen>:
@@ -419,33 +457,35 @@
             rows: 1
             size_hint_y: 0.12
             spacing: (Window.width/40, Window.height/50)
-            padding: (Window.width/25, Window.height/50)
+            padding: (Window.width/5, Window.height/50)
+            SwitchButton:
+                text: 'Menu'
+                padding: (Window.width/50, Window.height/5)
+                size_hint: (1, 0.2)
+                on_press:
+                    root.manager.current = 'menu'
+                    root.manager.transition.direction = 'right'
             Label:
                 id: label
                 text: 'Try annotating this signal!'
                 color: (1, 0, 0, 1)
                 font_size: Window.height/35
                 size_hint_x: 1
-            SwitchButton:
-                text: 'Menu'
-                size_hint: (1, 0.2)
-                on_press:
-                    root.manager.current = 'menu'
-                    root.manager.transition.direction = 'right'
-            SwitchButton:
-                text: 'Undo'
-                size_hint: (1, 0.2)
-                on_press: root.undo()
-            SwitchButton:
-                text: 'Skip'
-                size_hint: (1, 0.2)
-                on_press: root.skip ()
-            SwitchButton:
-                text: 'Examples'
-                size_hint: (1, 0.2)
-                on_press:
-                    root.manager.current = 'example'
-                    root.manager.transition.direction = 'left'
+
+#            SwitchButton:
+#                text: 'Undo'
+#                size_hint: (1, 0.2)
+#                on_press: root.undo()
+#            SwitchButton:
+#                text: 'Skip'
+#                size_hint: (1, 0.2)
+#                on_press: root.skip ()
+#            SwitchButton:
+#                text: 'Examples'
+#                size_hint: (1, 0.2)
+#                on_press:
+#                    root.manager.current = 'example'
+#                    root.manager.transition.direction = 'left'
 
 
 <TutorialEndScreen>:
@@ -537,7 +577,7 @@
             TextLabel:
                 id: ranking
         GridLayout:
-            cols: 4
+            cols: 2
             padding: (Window.width/12, Window.height/40)
             spacing: (Window.width/30, Window.height/15)
             size_hint_y: 0.4
@@ -551,14 +591,14 @@
                 on_press:
                     root.manager.current = 'achievement'
                     root.manager.transition.direction = 'left'
-            SwitchButton:
-                text: 'Leaderboard'
-                on_press:
-                    root.manager.current = 'leaderboard'
-                    root.manager.transition.direction = 'left'
-            SwitchButton:
-                text: 'Settings'
-                on_press: root.settings_screen()
+        #    SwitchButton:
+        #        text: 'Leaderboard'
+        #        on_press:
+        #            root.manager.current = 'leaderboard'
+        #            root.manager.transition.direction = 'left'
+        #    SwitchButton:
+        #        text: 'Settings'
+        #        on_press: root.settings_screen()
 
 
 
@@ -719,7 +759,8 @@
             text: 'Congratulations'
             size_hint_y: 0.2
         TextLabel:
-            text: 'You\'ve annotated all the signals \n currently available! \n More signals will be available soon.'
+          #  text: 'You\'ve annotated all the signals \n currently available! \n More signals will be available soon.'
+            text: 'You\'ve annotated all the signals! \n Thank you for your time! \n \n The results of this study will be published 2020 \n at the 11th conference of the \n European Study Group on Cardiovascular Oscillations.'
         GridLayout:
             cols: 1
             padding: (Window.width/3, 0)

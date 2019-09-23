@@ -115,11 +115,12 @@ class TextLabel(Label):
 class ScreenManage(ScreenManager):
     def __init__(self):
         ScreenManager.__init__(self)
-        global user, menu, anno, cont, tutorial, achievement, settings, start, inst1, inst2, inst3, tutorialend, \
+        global user, menu, anno, cont, tutorial, achievement, settings, start1,start2, inst1, inst2, inst3, tutorialend, \
             example, leaderboard, end
 
         end = EndScreen()
-        start = StartScreen()
+        start1 = StartScreen1()
+        start2 = StartScreen2()
         anno = AnnotateScreen()
         menu = MenuScreen()
         inst1 = InstructionScreen1()
@@ -144,7 +145,8 @@ class ScreenManage(ScreenManager):
                 if row != '':
                     self.empty = False
         if self.empty == True:
-            self.add_widget(start)
+            self.add_widget(start1)
+            self.add_widget(start2)
 
         # Add screens to screen manager
         self.add_widget(menu)
@@ -170,7 +172,20 @@ def dict_from_class(cls):
 
 
 
-class StartScreen(Screen):
+class StartScreen1(Screen):
+    def start_screen2(self, *args):
+        print('menu_screen called!')
+        """Switch to menu screen on button press and writes user data to user_score.csv"""
+        global username, user_id, menu,start2
+    
+        # Switch to menu screen
+        self.manager.current = 'start2'
+        self.manager.transition.direction = 'left'
+        # Create user id for tracking stats
+
+
+
+class StartScreen2(Screen):
     def menu_screen(self, *args):
         print('menu_screen called!')
         """Switch to menu screen on button press and writes user data to user_score.csv"""
@@ -186,9 +201,9 @@ class StartScreen(Screen):
             self.manager.current = 'menu'
             self.manager.transition.direction = 'left'
             # Create user id for tracking stats
-            user_id = randint(0, 99999) # When database is deployed add in check to ensure no ids are the same
+            user_id = randint(0, 9223372036854775) # When database is deployed add in check to ensure no ids are the same
             # Display welcome message after first launch
-            menu.ids.welcome_label.text = 'Welcome ' + username + '!'
+            menu.ids.welcome_label.text = 'Welcome!'
             # Write username to csv file
             csvdir = App.get_running_app().csvdir
             with open(os.path.join(csvdir, 'user_score.csv'), mode='a', newline='') as score_data:
