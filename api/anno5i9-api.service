@@ -6,7 +6,7 @@ After = network.target
 User = anno5i9
 Group = anno5i9
 WorkingDirectory = /home/anno5i9/anno5i9/api/
-ExecStart = /usr/bin/env --config config.py gunicorn app:app
+ExecStart = /home/anno5i9/.local/bin/gunicorn --config config.py app:app
 PrivateTmp = true
 
 [Install]
