@@ -75,6 +75,32 @@
     display: display.__self__
     Widget:
         canvas:
+    FloatLayout:
+        size: (1,1)
+        Label:
+            pos_hint: {'y': 0.48,'x': 0.48}
+            color: (0, 0, 0, 1)
+            text: '100'
+        Label:
+            pos_hint: {'y': .288,'x': 0.48}
+            color: (0, 0, 0, 1)
+            text: ' 80'
+        Label:
+            pos_hint: {'y': 0.096,'x': 0.48}
+            color: (0, 0, 0, 1)
+            text: ' 60'
+        Label:
+            pos_hint: {'y': -0.096,'x': 0.48}
+            color: (0, 0, 0, 1)
+            text: ' 40'
+        Label:
+            pos_hint: {'y': -0.288,'x': 0.48}
+            color: (0, 0, 0, 1)
+            text: ' 20'
+        Label:
+            pos_hint: {'y': -0.48,'x': 0.48}
+            color: (0, 0, 0, 1)
+            text: '  0'
     BoxLayout:
         orientation: 'vertical'
         FloatLayout:
@@ -102,17 +128,17 @@
                         size_hint_x: 0.1
                         font_size: Window.height/15
                         bold: True
-                GridLayout:
-                    cols: 2
-                    size_hint: (0.5, 0.2)
-                    spacing: 150
-                    Label:
-                        text: 'Your Ranking:    '
-                        color: (0, 0, 0, 1)
-                        size_hint_x: 0.1
-                        font_size: Window.height/25
-                    TextLabel:
-                        id: ranking
+               # GridLayout:
+               #     cols: 2
+               #     size_hint: (0.5, 0.2)
+               #     spacing: 150
+               #     Label:
+               #         text: 'Your Ranking:    '
+               #         color: (0, 0, 0, 1)
+               #         size_hint_x: 0.1
+               #         font_size: Window.height/25
+               #     TextLabel:
+               #         id: ranking
         GridLayout:
             rows: 1
             size_hint_y: 0.12
@@ -307,6 +333,36 @@
     empty: empty.__self__
     next_button: next_button.__self__
     name: 'tutorial'
+    FloatLayout:
+        size: (1,1)
+        Label:
+            id: hint_text
+            pos_hint: {'y': -0.4,'x': -0.35}
+            color: (0, 0, 0, 1)
+        Label:
+            pos_hint: {'y': 0.48,'x': 0.48}
+            color: (0, 0, 0, 1)
+            text: '100'
+        Label:
+            pos_hint: {'y': .288,'x': 0.48}
+            color: (0, 0, 0, 1)
+            text: ' 80'
+        Label:
+            pos_hint: {'y': 0.096,'x': 0.48}
+            color: (0, 0, 0, 1)
+            text: ' 60'
+        Label:
+            pos_hint: {'y': -0.096,'x': 0.48}
+            color: (0, 0, 0, 1)
+            text: ' 40'
+        Label:
+            pos_hint: {'y': -0.288,'x': 0.48}
+            color: (0, 0, 0, 1)
+            text: ' 20'
+        Label:
+            pos_hint: {'y': -0.48,'x': 0.48}
+            color: (0, 0, 0, 1)
+            text: '  0'
     BoxLayout:
         orientation: 'vertical'
         FloatLayout:
