@@ -27,11 +27,11 @@ from kivy.uix.togglebutton import ToggleButton
 
 import requests
 
-# Store user_id and username in global variable
-# TODO: Read username and userid from file system
+# Store user_id and user_age in global variable
+# TODO: Read user_age and userid from file system
 user_id = None
-username = ''
-profession = 'other'
+user_age = ''
+user_profession = 'other'
 
 # Create global variables to access screens
 user = None
@@ -176,7 +176,7 @@ class StartScreen1(Screen):
     def start_screen2(self, *args):
         print('menu_screen called!')
         """Switch to menu screen on button press and writes user data to user_score.csv"""
-        global username, user_id, menu,start2
+        global user_age, user_id, menu,start2
     
         # Switch to menu screen
         self.manager.current = 'start2'
@@ -189,14 +189,14 @@ class StartScreen2(Screen):
     def menu_screen(self, *args):
         print('menu_screen called!')
         """Switch to menu screen on button press and writes user data to user_score.csv"""
-        global username, user_id, menu
-        # Set username to text entered by user
-        username = self.ids.textinput.text
-        # Make sure user enters a username
-        # TODO: Fix username and user_id generation
+        global user_age, user_id, menu
+        # Set user_age to text entered by user
+        user_age = self.ids.textinput.text
+        # Make sure user enters a user_age
+        # TODO: Fix user_age and user_id generation
             # TODO: make persistent
             # TODO: use guid
-        if username != '':
+        if user_age != '':
             # Switch to menu screen
             self.manager.current = 'menu'
             self.manager.transition.direction = 'left'
@@ -204,18 +204,18 @@ class StartScreen2(Screen):
             user_id = randint(0, 9223372036854775) # When database is deployed add in check to ensure no ids are the same
             # Display welcome message after first launch
             menu.ids.welcome_label.text = 'Welcome!'
-            # Write username to csv file
+            # Write user_age to csv file
             csvdir = App.get_running_app().csvdir
             with open(os.path.join(csvdir, 'user_score.csv'), mode='a', newline='') as score_data:
                 writer = csv.writer(score_data)
-                writer.writerow(['', user_id, '', '', '', username])
+                writer.writerow(['picture_name','score','display_start_time','annotation_start_time','annotation_end_time','user_id','user_age','user_profession'])
         else:
             return
     def set_profession(self,prof):
-        global profession
-        print(profession)
-        profession = prof
-        print(profession)
+        global user_profession
+        print(user_profession)
+        user_profession = prof
+        print(user_profession)
         
 
 
@@ -231,8 +231,8 @@ class UserScreen(Screen):
 
 class MenuScreen(Screen):
     def __init__(self):
-        global username
-        self.username = username
+        global user_age
+        self.user_age = user_age
         Screen.__init__(self)
 
     def anno_screen(self, *args):
@@ -272,7 +272,7 @@ class AnnotateScreen(Screen):
 
     def __init__(self):
         Screen.__init__(self)
-        global user_id, username, total_counter, score_dict, continue_trigger, is_finished
+        global user_id, user_age, total_counter, score_dict, continue_trigger, is_finished
         
         
         # Initialize counter to track how many pictures are done in each grouping
@@ -292,9 +292,9 @@ class AnnotateScreen(Screen):
             for row in reader:
                 # Get user's id
                 user_id = row[1]
-                # Get user's username
+                # Get user's user_age
                 if row[5] != '':
-                    username = row[5]
+                    user_age = row[5]
                 for pic in self.pictures:
                     if row[2] == Path(pic).name:
                         self.pictures.remove(pic)
@@ -317,10 +317,10 @@ class AnnotateScreen(Screen):
 
     def end_screen(self, *args):
         """Display end screen when there are no variables left to annotate"""
-        global end, username
+        global end, user_age
         self.manager.current = 'end'
         self.manager.transition.direction = 'left'
-        end.ids.label.text = 'Congratulations ' + username + '!'
+        end.ids.label.text = 'Congratulations ' + user_age + '!'
 
     def on_touch_down(self, touch):
        
@@ -422,7 +422,7 @@ class AnnotateScreen(Screen):
 
     def change_image(self, score=None):
         """Change the displayed image and write the filename and score to score.csv"""
-        global total_counter, continue_trigger
+        global total_counter, continue_trigger,user_profession
         try:
             # Write picture name and score to csv
             csvdir = App.get_running_app().csvdir
@@ -430,13 +430,14 @@ class AnnotateScreen(Screen):
                 writer = csv.writer(score_data)
                 # TODO: Remove local csv
                 writer.writerow([
-                    self.display_start_time.isoformat(), 
-                    user_id, 
-                    Path(self.current).name, 
-                    score,
-                    self.ranking,
-                    ''
-                ])
+                        Path(self.current).name,
+                        '{:0.2f}'.format(score),
+                        self.display_start_time.strftime('%M:%S.%f')[:-4],
+                        self.annotation_start_time.strftime('%M:%S.%f')[:-4],
+                        self.annotation_end_time.strftime('%M:%S.%f')[:-4],
+                        user_age,
+                        user_id,
+                        user_profession])
                 # requests.post('http://127.0.0.1:5000/upload?user=user123', json={
                 #     'user_id': user_id,
                 #     # 'user_level':   # Maybe use annotation for that
@@ -562,11 +563,11 @@ class AnnotateScreen(Screen):
             return
 
     def cont_screen(self, *args):
-        """Switch to continue screen and update username in label on continue screen"""
-        global cont, total_counter, total_annos, username
+        """Switch to continue screen and update user_age in label on continue screen"""
+        global cont, total_counter, total_annos, user_age
         update_rankings()
 
-        cont.ids.label_1.text = 'Keep it up ' + username + '!'
+        cont.ids.label_1.text = 'Keep it up ' + user_age + '!'
         cont.ids.session_annos.text = str(total_counter)
         cont.ids.tot_annos.text = str(total_annos)
         self.manager.current = 'cont'
@@ -967,9 +968,9 @@ class ExampleScreen(Screen):
 
 class AchievementScreen(Screen):
     def __init__(self):
-        global username
+        global user_age
         Screen.__init__(self)
-        self.username = username
+        self.user_age = user_age
         # Create image widgets for achievements
         self.tut_badge = AchievementBadge(trophy_source='pictures/trophy.png', title_text='Mastering the Basics',
                                           description='Complete the tutorial', max_progress=1)
@@ -998,21 +999,21 @@ class AchievementScreen(Screen):
 class SettingsScreen(Screen):
     def __init__(self):
         Screen.__init__(self)
-        global username, continue_trigger
+        global user_age, continue_trigger
 
     def unbind_all(self, *args):
         # Unbind button functions
-        self.ids.save_changes_button.unbind(on_press=self.save_username)
+        self.ids.save_changes_button.unbind(on_press=self.save_user_age)
         self.ids.save_changes_button.unbind(on_press=self.save_continues)
 
     def grid_widgets(self):
         """Adds default widgets to grid layout for settings screen"""
-        # Add username label
+        # Add user_age label
         self.ids.grid.add_widget(self.ids.user_label)
-        # Add username
+        # Add user_age
         self.ids.grid.add_widget(self.ids.user)
-        # Add change username button
-        self.ids.grid.add_widget(self.ids.change_username_button)
+        # Add change user_age button
+        self.ids.grid.add_widget(self.ids.change_user_age_button)
         # Add continue label
         self.ids.grid.add_widget(self.ids.cont_label)
         # Add continue number
@@ -1043,7 +1044,7 @@ class SettingsScreen(Screen):
         self.manager.transition.direction = 'right'
 
     def cancel(self, *args):
-        """Allows user to cancel choosing their new username"""
+        """Allows user to cancel choosing their new user_age"""
         # Clear all widgets
         self.clear_all()
         # Add default widgets back to the grid
@@ -1052,8 +1053,8 @@ class SettingsScreen(Screen):
         self.ids.box.add_widget(self.ids.top_grid)
         self.ids.box.add_widget(self.ids.grid)
 
-    def change_username(self, *args):
-        """Allows user to change their username"""
+    def change_user_age(self, *args):
+        """Allows user to change their user_age"""
         # Reset text box text
         self.ids.textinput.text = ''
         # Remove all widgets
@@ -1061,9 +1062,9 @@ class SettingsScreen(Screen):
         self.ids.top_grid.padding = Window.width/20
         # Unbind button
         self.unbind_all()
-        # Bind save username function to button
-        self.ids.save_changes_button.bind(on_press=self.save_username)
-        # Add username label
+        # Bind save user_age function to button
+        self.ids.save_changes_button.bind(on_press=self.save_user_age)
+        # Add user_age label
         self.ids.change_user_grid.add_widget(self.ids.user_label)
         # Add textbox
         self.ids.change_user_grid.add_widget(self.ids.textinput)
@@ -1076,13 +1077,13 @@ class SettingsScreen(Screen):
         self.ids.box.add_widget(self.ids.change_user_grid)
         self.ids.box.add_widget(self.ids.change_btn_grid)
 
-    def save_username(self, *args):
-        """Saves new username in csv and changes appropriate widgets"""
-        global username, menu, anno, user
-        # Get username typed by user
+    def save_user_age(self, *args):
+        """Saves new user_age in csv and changes appropriate widgets"""
+        global user_age, menu, anno, user
+        # Get user_age typed by user
         if self.ids.textinput.text != '':
-            # Save text user entered as username
-            username = self.ids.textinput.text
+            # Save text user entered as user_age
+            user_age = self.ids.textinput.text
             # Remove all widgets
             self.clear_all()
             self.ids.top_grid.padding = Window.width / 25
@@ -1090,22 +1091,22 @@ class SettingsScreen(Screen):
             self.grid_widgets()
             self.ids.box.add_widget(self.ids.top_grid)
             self.ids.box.add_widget(self.ids.grid)
-            # Add in label with new username
-            self.ids.user.text = username
-            # Change username in end screen
-            end.ids.label.text = 'Congratulations ' + username + '!'
-            # Reset welcome label on menu screen with new username
-            menu.ids.welcome_label.text = 'Welcome ' + username +'!'
-            # Write new username in user_scores.csv file
+            # Add in label with new user_age
+            self.ids.user.text = user_age
+            # Change user_age in end screen
+            end.ids.label.text = 'Congratulations ' + user_age + '!'
+            # Reset welcome label on menu screen with new user_age
+            menu.ids.welcome_label.text = 'Welcome ' + user_age +'!'
+            # Write new user_age in user_scores.csv file
             csvdir = App.get_running_app().csvdir
             with open(os.path.join(csvdir, 'user_score.csv'), mode='a', newline='') as score_data:
                 writer = csv.writer(score_data)
-                writer.writerow(['', user_id, '', '', '', username])
+                writer.writerow(['picture_name','score','display_start_time','annotation_start_time','annotation_end_time','user_id','user_age','user_profession'])
         else:
             return
 
     def change_continues(self, *args):
-        """Allows user to change their username"""
+        """Allows user to change their user_age"""
         # Clear textbox text
         self.ids.textinput.text = ''
         # Clear all widgets from screen
@@ -1137,7 +1138,7 @@ class SettingsScreen(Screen):
             self.grid_widgets()
             self.ids.box.add_widget(self.ids.top_grid)
             self.ids.box.add_widget(self.ids.grid)
-            # Add in label with new username
+            # Add in label with new user_age
             self.ids.cont_num.text = str(continue_trigger)
         else:
             return
@@ -1173,17 +1174,17 @@ def line_dist(x1, y1, x2, y2):
 
 
 def update_rankings():
-    """Updates username, total annotations, average ranking, and other user stats by reading csv file"""
+    """Updates user_age, total annotations, average ranking, and other user stats by reading csv file"""
     global total_annos, avg_ranking, tutorial_check, total_exc, date_tracker, score_dict, time_check
 
-    # Set username on user profile screen
-    user.ids.user.text = username
-    # Set username on settings screen
-    settings.ids.user.text = username
-    # Set username on achievements screen
-    achievement.ids.label.text = username + '\'s Achievements'
-    # Set username on continue screen
-    cont.ids.label_1.text = 'Keep it up ' + username + '!'
+    # Set user_age on user profile screen
+    user.ids.user.text = user_age
+    # Set user_age on settings screen
+    settings.ids.user.text = user_age
+    # Set user_age on achievements screen
+    achievement.ids.label.text = user_age + '\'s Achievements'
+    # Set user_age on continue screen
+    cont.ids.label_1.text = 'Keep it up ' + user_age + '!'
     # Update continue trigger on settings screen
     settings.ids.cont_num.text = str(continue_trigger)
     # Read csv file
@@ -1307,7 +1308,7 @@ class ScorePicturesApp(App):
         else:
             self.csvdir = os.path.join(os.path.dirname(__file__), 'csv')
 
-        # TODO: Load username here if file exists, else create user_id here
+        # TODO: Load user_age here if file exists, else create user_id here
 
 
     def build(self):
