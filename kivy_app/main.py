@@ -52,6 +52,7 @@ leaderboard = None
 end = None
 # Create global variable to track user during tutorial
 image = None
+hint_text = None
 # Create global variable to store info for swipe overlay
 lines = None
 line_color = [0, 0, 255, 0.01]
@@ -250,28 +251,6 @@ class MenuScreen(Screen):
         update_std_achievements(var=total_exc, badge=achievement.excellent_badge)
         update_std_achievements(var=len(date_tracker), badge=achievement.days_badge)
 
-class MyPaintWidget(Widget):
-
-    def on_touch_down(self, touch):
-        with self.canvas:
-            Color(1, 0, 0)
-            d = 30.
-            Ellipse(pos=(touch.x - d / 2, touch.y - d / 2), size=(d, d))
-            touch.ud['line'] = Line(points=(touch.x, touch.y))
-
-    def on_touch_move(self, touch):
-        touch.ud['line'].points += [touch.x, touch.y]
-
-        if len(touch.ud['line'].points) > 30:
-            print(touch.ud['line'].points.pop(0))
-            touch.ud['line'].points.pop(0)
-
-
-    def on_touch_up(self, touch):
-        print(touch.ud['line'].points)
-        #print(type(touch.ud['line'].points))
-
-
 class AnnotateScreen(Screen):
     # Set screen background to white
     Window.clearcolor = (1, 1, 1, 1)
@@ -280,9 +259,6 @@ class AnnotateScreen(Screen):
         Screen.__init__(self)
         global user_id, username, total_counter, score_dict, continue_trigger, is_finished
         
-        parent = Widget()
-        self.painter = MyPaintWidget()
-        parent.add_widget(self.painter)
         
         # Initialize counter to track how many pictures are done in each grouping
         self.counter = 0
@@ -322,10 +298,6 @@ class AnnotateScreen(Screen):
         # Display message if they have finished
         else:
             is_finished = True
-        parent = Widget()
-        self.painter = MyPaintWidget()
-        parent.add_widget(self.painter)
-
 
 
     def end_screen(self, *args):
@@ -348,13 +320,13 @@ class AnnotateScreen(Screen):
             touch.ud['line'] = Line(points=(touch.x, touch.y),width=3)
 
 
-        try:
-            # Reset maching score ranking
-            self.ids.ranking.text = ''
-        # Prevent error when click on end screen
-        except AttributeError:
-            print(traceback.format_exc())
-            return True
+        # try:
+        #     # Reset maching score ranking
+        #     self.ids.ranking.text = ''
+        # # Prevent error when click on end screen
+        # except AttributeError:
+        #     print(traceback.format_exc())
+        #     return True
         # Draw swipe line on canvas
 
         touch.grab(self)
@@ -389,6 +361,8 @@ class AnnotateScreen(Screen):
         super(AnnotateScreen, self).on_touch_up(touch)
         global lines
         self.annotation_end_time = datetime.datetime.now()
+        
+        self.canvas.remove(touch.ud['line'])
 
         if touch.grab_current is not self:
             return
@@ -404,28 +378,28 @@ class AnnotateScreen(Screen):
             # Calculate score of swipe
             self.score_val = touch.y / Window.height
             # Check if drag movement is big enough
-            if dist > min_dist and dx > Window.width / 10:
-                self.prev_pictures.append(self.current)
-                # Assign ranking based on comparison to machine learning score
-                self.ranking = abs(self.score_val - float(self.machine_score))
-                if self.ranking < 0.1:
-                    self.ids.ranking.text = 'Excellent!'
-                elif self.ranking < 0.2:
-                    self.ids.ranking.text = 'Very Good!'
-                elif self.ranking < 0.3:
-                    self.ids.ranking.text = 'Good!'
-                elif self.ranking < 0.4:
-                    self.ids.ranking.text = 'OK!'
-                elif self.ranking < 0.5:
-                    self.ids.ranking.text = 'Not Quite!'
+#            if dist > min_dist and dx > Window.width / 10:
+            self.prev_pictures.append(self.current)
+            # Assign ranking based on comparison to machine learning score
+            self.ranking = abs(self.score_val - float(self.machine_score))
+            # if self.ranking < 0.1:
+            #     self.ids.ranking.text = 'Excellent!'
+            # elif self.ranking < 0.2:
+            #     self.ids.ranking.text = 'Very Good!'
+            # elif self.ranking < 0.3:
+            #     self.ids.ranking.text = 'Good!'
+            # elif self.ranking < 0.4:
+            #     self.ids.ranking.text = 'OK!'
+            # elif self.ranking < 0.5:
+            #     self.ids.ranking.text = 'Not Quite!'
 
-                # Assign score based on drag direction
-                self.change_image(score=self.score_val)
+            # Assign score based on drag direction
+            self.change_image(score=self.score_val)
 
             # Recenter display picture if drag is too small
-            else:
-                self.ids.display.center = self.center
-                self.ids.ranking.text = 'Try Again'
+            # else:
+            #     self.ids.display.center = self.center
+            #     self.ids.ranking.text = 'Try Again'
         # Prevent crashing from user touches on end screen
         except (AttributeError, TypeError):
             print(traceback.format_exc())
@@ -448,16 +422,16 @@ class AnnotateScreen(Screen):
                     self.ranking,
                     ''
                 ])
-                requests.post('http://127.0.0.1:5000/upload?user=user123', json={
-                    'user_id': user_id,
-                    # 'user_level':   # Maybe use annotation for that
-                    'display_start_time': self.display_start_time.isoformat(),
-                    'annotation_start_time': self.annotation_start_time.isoformat(),
-                    'annotation_end_time': self.annotation_end_time.isoformat(),
-                    'picture_name': Path(self.current).name,
-                    'score': score,
-                    'ranking': self.ranking,
-                })
+                # requests.post('http://127.0.0.1:5000/upload?user=user123', json={
+                #     'user_id': user_id,
+                #     # 'user_level':   # Maybe use annotation for that
+                #     'display_start_time': self.display_start_time.isoformat(),
+                #     'annotation_start_time': self.annotation_start_time.isoformat(),
+                #     'annotation_end_time': self.annotation_end_time.isoformat(),
+                #     'picture_name': Path(self.current).name,
+                #     'score': score,
+                #     'ranking': self.ranking,
+                # })
             # Find score assigned by machine learner
             with open(join(curdir, 'csv', 'machine_score.csv'), mode='r') as machine:
                 reader = csv.reader(machine)
@@ -615,6 +589,7 @@ class InstructionScreen3(Screen):
 
 class TutorialScreen(Screen):
     def __init__(self):
+        global hint_text
         Screen.__init__(self, name='tutorial')
         # Create list variable to store pictures and solutions
         self.pictures = []
@@ -629,12 +604,12 @@ class TutorialScreen(Screen):
             self.pictures.append(filename)
         print(self.pictures)
         # Pull out all solution pictures into a separate list
-        for filename in glob(join(curdir, 'tutorial', '*_soln.png')):
-            self.solutions.append(filename)
+        #for filename in glob(join(curdir, 'tutorial', '*_soln.png')):
+        #    self.solutions.append(filename)
         # Remove all solution pictures from the original pictures list
-        self.pictures = [pic for pic in self.pictures if pic not in self.solutions]
+        #self.pictures = [pic for pic in self.pictures if pic not in self.solutions]
         self.pictures.sort()
-        self.solutions.sort()
+        #self.solutions.sort()
         # Display first picture
         self.current = self.pictures.pop(0)
         self.soln_current = ''
@@ -642,12 +617,28 @@ class TutorialScreen(Screen):
         self.ids.display.source = self.current
         self.ids.pb.value = self.counter
 
+        with open(join(curdir, 'csv','tutorial_score.csv'), mode='r') as machine:
+            reader = csv.reader(machine)
+            for row in reader:
+                if row[0] == Path(self.current).name:
+                    if row[1] != '':
+                        self.ids.hint_text.text = 'score: ~{}'.format(int(float(row[1])*100))
+                    else:
+                        self.ids.hint_text.text = ''
+
+
     # Record initial down click coordinates
     def on_touch_down(self, touch):
         """Record the initial coordinates of the user touch"""
         super(TutorialScreen, self).on_touch_down(touch)
         global lines
+
         self.coord = [touch.x, touch.y]
+        self.annotation_start_time = datetime.datetime.now()
+
+        with self.canvas:
+            Color(1, 1, 0)
+            touch.ud['line'] = Line(points=(touch.x, touch.y),width=3)
 
         try:
             self.ids.ranking.text = ''
@@ -676,28 +667,11 @@ class TutorialScreen(Screen):
         super(TutorialScreen, self).on_touch_move(touch)
         global lines
 
-        while True:
-            oldx, oldy = lines[-2], lines[-1]
-            break
-        points = line_dist(oldx, oldy, touch.x, touch.y)
+        touch.ud['line'].points += [touch.x, touch.y]
 
-        if points:
-            try:
-                for idx in range(0, len(points), 2):
-                    group = randint(0, 999999)
-                    with self.ids.display.canvas:
-                        Color(*line_color)
-                        Point(points=(points[idx], points[idx + 1]), pointsize=Window.height / 30, group=str(group))
-
-                    lines.append(points[idx])
-                    lines.append(points[idx + 1])
-
-                    Clock.schedule_once(partial(self.remove_point, group=str(group)), 0.3)
-                    self.groups.append(str(group))
-
-            except GraphicException:
-                print(traceback.format_exc())
-                pass
+        if len(touch.ud['line'].points) > 30:
+            touch.ud['line'].points.pop(0)
+            touch.ud['line'].points.pop(0)
 
         try:
             self.update_label(touch)
@@ -712,70 +686,77 @@ class TutorialScreen(Screen):
         super(TutorialScreen, self).on_touch_up(touch)
         global lines
 
+        self.canvas.remove(touch.ud['line'])
+
+        print(self.ids.display.canvas)
         if touch.grab_current is not self:
             return
         touch.ungrab(self)
 
-        for group in self.groups:
-            self.ids.display.canvas.remove_group(group)
-
         try:
             self.coord.append(touch.x)
             self.coord.append(touch.y)
-            min_dist, dist, dx, dy = calculate_dist(*self.coord)
+            #min_dist, dist, dx, dy = calculate_dist(*self.coord)
             self.score_val = touch.y / Window.height
 
             with open(join(curdir, 'csv','tutorial_score.csv'), mode='r') as machine:
                 reader = csv.reader(machine)
                 for row in reader:
+                    print(Path(self.current).name)
+                    print(row[0])
                     if row[0] == Path(self.current).name:
                         if row[1] != '':
                             self.machine_score = row[1]
+                            print(self.machine_score)
+                            print('Score_ found')
                         else:
                             self.machine_score = ''
+                            print('No Score :(')
+                            print(self.machine_score)
+
 
             # Check if drag movement is big enough
-            if dist > min_dist and dx > Window.width / 5:
+            #if dist > min_dist and dx > Window.width / 5:
 
-                self.tracker = 'soln'
-                # Assign ranking based on comparison to machine learning score
-                self.ranking = abs(self.score_val -float(self.machine_score))
-                if self.ranking < 0.1:
-                    self.ids.ranking.text = 'Excellent!'
-                elif self.ranking < 0.2:
-                    self.ids.ranking.text = 'Very Good!'
-                elif self.ranking < 0.3:
-                    self.ids.ranking.text = 'Good!'
-                elif self.ranking < 0.4:
-                    self.ids.ranking.text = 'OK!'
-                elif self.ranking < 0.5:
-                    self.ids.ranking.text = 'Not Quite!'
+            self.tracker = 'soln'
+            # Assign ranking based on comparison to machine learning score
+            self.ranking = abs(self.score_val -float(self.machine_score))
+            if self.ranking < 0.02:
+                self.ids.ranking.text = 'Excellent'
+            elif self.ranking < 0.05:
+                self.ids.ranking.text = 'Very Good'
+            elif self.ranking < 0.1:
+                self.ids.ranking.text = 'Good'
+            elif self.ranking < 0.2:
+                self.ids.ranking.text = 'OK'
+            elif self.ranking < 0.5:
+                self.ids.ranking.text = 'Not Quite'
 
-                try:
-                    self.prev_pictures.append(self.current)
-                    self.ids.float.remove_widget(self.ids.display)
-                    self.ids.label.text = ''
-                    self.ids.float.add_widget(self.ids.image, index=2)
-                    self.next()
-                    self.soln_current = self.solutions.pop(0)
-                    self.ids.image.source = self.soln_current
-                    self.ids.grid.remove_widget(self.ids.empty)
-                    self.ids.grid.add_widget(self.ids.next_button)
-                    self.counter = self.counter + 1
-                    self.ids.pb.value = self.counter
+            try:
+                self.prev_pictures.append(self.current)
+                self.ids.float.remove_widget(self.ids.display)
+                self.ids.label.text = ''
+                self.ids.float.add_widget(self.ids.image, index=2)
+                self.next()
+                self.soln_current = self.solutions.pop(0)
+                self.ids.image.source = self.soln_current
+                self.ids.grid.remove_widget(self.ids.empty)
+                self.ids.grid.add_widget(self.ids.next_button)
+                self.counter = self.counter + 1
+                self.ids.pb.value = self.counter
 
-                # Prevent crashing from drag on solution screen
-                except (WidgetException, IndexError):
-                    print(traceback.format_exc())
-                    return
+            # Prevent crashing from drag on solution screen
+            except (WidgetException, IndexError):
+                print(traceback.format_exc())
+                return
 
-            # Recenter display picture if drag is too small
-            else:
-                self.ids.display.center = self.center
-                if dist < 5:
-                    self.ids.ranking.text = ''
-                else:
-                    self.ids.ranking.text = 'Try Again'
+            # # Recenter display picture if drag is too small
+            # else:
+            #     self.ids.display.center = self.center
+            #     if dist < 5:
+            #         self.ids.ranking.text = ''
+            #     else:
+            #         self.ids.ranking.text = 'Try Again'
         # Prevent crashing from user touches on end screen
         except (AttributeError, TypeError):
             print(traceback.format_exc())
@@ -896,6 +877,8 @@ class TutorialScreen(Screen):
     def next(self, *args):
         """Removes the solution image and re-adds the signal to annotate, updates the progress bar"""
         global screen_manager, tutorial
+        
+        
         if len(self.pictures) == 0:
             self.manager.current = 'tutorialend'
             self.manager.transition.direction = 'left'
@@ -917,6 +900,7 @@ class TutorialScreen(Screen):
             tutorial = TutorialScreen()
             screen_manager.add_widget(tutorial)
 
+
         else:
             # Add solution to previous solutions list
             self.prev_soln.append(self.soln_current)
@@ -926,6 +910,16 @@ class TutorialScreen(Screen):
             self.current = self.pictures.pop(0)
             self.ids.display.source = self.current
             self.ids.float.add_widget(self.ids.display, index=2)
+            print('called!!')
+            with open(join(curdir, 'csv','tutorial_score.csv'), mode='r') as machine:
+                reader = csv.reader(machine)
+                for row in reader:
+                    if row[0] == Path(self.current).name:
+                        if row[1] != '':
+                            self.ids.hint_text.text = 'score: ~{}'.format(int(float(row[1])*100))
+                        else:
+                            self.ids.hint_text.text = ''
+        
             # Remove next button
             self.ids.grid.add_widget(self.ids.empty)
             self.ids.grid.remove_widget(self.ids.next_button)
@@ -936,6 +930,7 @@ class TutorialScreen(Screen):
             self.ids.pb.value = self.counter
             # Update tracker to indicate on signal picture
             self.tracker = 'signal'
+
 
 
 class TutorialEndScreen(Screen):

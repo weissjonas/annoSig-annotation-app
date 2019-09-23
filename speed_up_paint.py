@@ -1,35 +1,63 @@
 from kivy.app import App
-from kivy.uix.widget import Widget
-from kivy.graphics import Color, Ellipse, Line
+from kivy.lang import Builder
+from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix import floatlayout, label
+Builder.load_string("""
+<MenuScreen>:
+    BoxLayout:
+        Button:
+            text: 'Goto settings'
+            on_press: root.manager.current = 'settings'
+        Button:
+            text: 'Quit'
+    FloatLayout:
+        size: (1,1)
+        Label:
+            pos_hint: {'y': 0.48,'x': 0.48}
+            text: '100'
+        Label:
+            pos_hint: {'y': .288,'x': 0.48}
+            text: ' 80'
+        Label:
+            pos_hint: {'y': 0.096,'x': 0.48}
+            text: ' 60'
+        Label:
+            pos_hint: {'y': -0.096,'x': 0.48}
+            text: ' 40'
+        Label:
+            pos_hint: {'y': -0.288,'x': 0.48}
+            text: ' 20'
+        Label:
+            pos_hint: {'y': -0.48,'x': 0.48}
+            text: '  0'
 
+    
 
-class MyPaintWidget(Widget):
+<SettingsScreen>:
+    BoxLayout:
+        Button:
+            text: 'My settings button'
+        Button:
+            text: 'Back to menu'
+            on_press: root.manager.current = 'menu'
+""")
 
-    def on_touch_down(self, touch):
-        with self.canvas:
-            Color(1, 1, 0)
-            d = 30.
-            Ellipse(pos=(touch.x - d / 2, touch.y - d / 2), size=(d, d))
-            touch.ud['line'] = Line(points=(touch.x, touch.y))
+# Declare both screens
+class MenuScreen(Screen):
+    pass
 
-    def on_touch_move(self, touch):
-        touch.ud['line'].points += [touch.x, touch.y]
+class SettingsScreen(Screen):
+    pass
 
-        if len(touch.ud['line'].points) > 30:
-            touch.ud['line'].points.pop(0)
-            touch.ud['line'].points.pop(0)
+# Create the screen manager
+sm = ScreenManager()
+sm.add_widget(MenuScreen(name='menu'))
+sm.add_widget(SettingsScreen(name='settings'))
 
-
-    def on_touch_up(self, touch):
-        print(touch.ud['line'].points)
-        print(type(touch.ud['line'].points))
-
-
-class MyPaintApp(App):
+class TestApp(App):
 
     def build(self):
-        return MyPaintWidget()
-
+        return sm
 
 if __name__ == '__main__':
-    MyPaintApp().run()
+    TestApp().run()
