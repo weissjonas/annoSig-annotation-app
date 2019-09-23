@@ -1,0 +1,13 @@
+[Unit]
+Description = AnnoSig API
+After = network.target
+
+[Service]
+User = anno5i9
+Group = anno5i9
+WorkingDirectory = /home/anno5i9/anno5i9/api/
+ExecStart = /usr/bin/env --config config.py gunicorn app:app
+PrivateTmp = true
+
+[Install]
+WantedBy = multi-user.target
