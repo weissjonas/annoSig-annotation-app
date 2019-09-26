@@ -1,6 +1,9 @@
 # Python
 __pycache__/
 *.py[cod]
+api/config.py
+api/ssl/*
+api/data-*.json
 
 # buildozer
 .buildozer/

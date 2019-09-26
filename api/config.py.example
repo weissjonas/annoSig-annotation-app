@@ -1,0 +1,3 @@
+certfile = "/home/anno5i9/anno5i9/api/ssl/LCARS2.pem" 
+keyfile = "/home/anno5i9/anno5i9/api/ssl/LCARS2-key.pem" 
+bind = "0.0.0.0:8000"
