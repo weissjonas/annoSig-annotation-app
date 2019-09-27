@@ -10,7 +10,6 @@ from pathlib import Path
 from random import randint
 import traceback
 
-
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
@@ -25,7 +24,16 @@ from kivy.uix.widget import WidgetException
 from kivy.utils import platform
 from kivy.uix.togglebutton import ToggleButton
 
-import requests
+#import requests
+#from OpenSSL import SSL
+from kivy.network.urlrequest import UrlRequest
+import ssl
+import json
+
+API_URL = "https://95.217.13.152:8000"
+# API_URL = "https://127.0.0.1:8000"
+
+API_TOKEN = "0e2d70b1f642f85550adb7ff20656462"
 
 # Store user_id and user_age in global variable
 # TODO: Read user_age and userid from file system
@@ -206,9 +214,11 @@ class StartScreen2(Screen):
             menu.ids.welcome_label.text = 'Welcome!'
             # Write user_age to csv file
             csvdir = App.get_running_app().csvdir
+
             with open(os.path.join(csvdir, 'user_score.csv'), mode='a', newline='') as score_data:
                 writer = csv.writer(score_data)
                 writer.writerow(['picture_name','score','display_start_time','annotation_start_time','annotation_end_time','user_id','user_age','user_profession'])
+
         else:
             return
     def set_profession(self,prof):
@@ -423,6 +433,35 @@ class AnnotateScreen(Screen):
     def change_image(self, score=None):
         """Change the displayed image and write the filename and score to score.csv"""
         global total_counter, continue_trigger,user_profession
+        # try:
+        temp_json = {
+            "picture_name":Path(self.current).name,
+            "score":"{:0.2f}".format(score),
+            "display_time_before_swipe":(self.annotation_start_time-self.display_start_time).total_seconds(),
+            "swipe_time":(self.annotation_end_time-self.annotation_start_time).total_seconds(),
+            "user_id":user_id,
+            "user_age":user_age,
+            "user_profession":user_profession,
+            }
+        UrlRequest('https://95.217.13.152:8000/upload',
+                 req_body=json.dumps(temp_json), 
+                 req_headers={"Authorization": "0e2d70b1f642f85550adb7ff20656462"},
+                 #ca_file="ssl/ca.pem",
+                 verify=False)
+
+        # resp = requests.post(
+        #     f"{API_URL}/upload",
+        #     headers={
+        #         "Authorization": API_TOKEN,
+        #     },
+        #     , 
+        #     verify="ssl/ca.pem"
+        # )
+        # resp.raise_for_status()
+        # # except requests.RequestException as err:
+        #     # print("Error:", err)
+
+
         try:
             # Write picture name and score to csv
             csvdir = App.get_running_app().csvdir
@@ -432,9 +471,9 @@ class AnnotateScreen(Screen):
                 writer.writerow([
                         Path(self.current).name,
                         '{:0.2f}'.format(score),
-                        self.display_start_time.strftime('%M:%S.%f')[:-4],
-                        self.annotation_start_time.strftime('%M:%S.%f')[:-4],
-                        self.annotation_end_time.strftime('%M:%S.%f')[:-4],
+                        self.display_start_time.strftime('%M:%S.%f'),
+                        self.annotation_start_time.strftime('%M:%S.%f'),
+                        self.annotation_end_time.strftime('%M:%S.%f'),
                         user_age,
                         user_id,
                         user_profession])
@@ -490,6 +529,8 @@ class AnnotateScreen(Screen):
             total_counter = total_counter + 1
             # Update progress bar
             self.ids.pb.value = self.prog_max - len(self.pictures) - 1
+        self.display_start_time = datetime.datetime.now()
+        
 
     def update_label(self, touch):
         """Changes the users score and color of the score for the signal in real time"""
