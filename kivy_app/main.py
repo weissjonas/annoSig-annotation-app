@@ -1,11 +1,11 @@
-import csv
+#import csv
 import datetime
-import os
+#import os
 import re
 from functools import partial
 from glob import glob
 from math import sqrt
-from os.path import dirname, join
+#from os.path import dirname, join
 from pathlib import Path
 from random import randint
 import traceback
@@ -23,6 +23,7 @@ from kivy.uix.widget import Widget
 from kivy.uix.widget import WidgetException
 from kivy.utils import platform
 from kivy.uix.togglebutton import ToggleButton
+from kivy.storage.jsonstore import JsonStore
 
 #import requests
 #from OpenSSL import SSL
@@ -75,6 +76,9 @@ date_tracker = {}
 time_check = False
 # Create dictionary to store scores
 score_dict = {}
+user_store = JsonStore('user.json')
+picture_store = JsonStore('pics.json')
+tutorial_store = JsonStore('tutorial.json')
 # Check if user has completed the tutorial
 tutorial_check = False
 # Check if user has annotated all available signals
@@ -84,7 +88,7 @@ last_screen = None
 # Number of signals to annotate before triggering continue screen
 continue_trigger = 120
 # Store directory name in a variable
-curdir = dirname(__file__)
+#curdir = dirname(__file__)
 
 # Move screen when user acivates virtual keyboard on mobile
 Window.softinput_mode = 'pan'
@@ -145,14 +149,7 @@ class ScreenManage(ScreenManager):
 
 
         # Check if it is user's first time using app
-        self.empty = True
-        csvdir = App.get_running_app().csvdir
-        with open(os.path.join(csvdir, 'user_score.csv'), mode='r') as score_data:
-            reader = csv.reader(score_data)
-            for row in reader:
-                if row != '':
-                    self.empty = False
-        if self.empty == True:
+        if not(user_store.exists('user')):
             self.add_widget(start1)
             self.add_widget(start2)
 
@@ -212,15 +209,12 @@ class StartScreen2(Screen):
             user_id = randint(0, 9223372036854775) # When database is deployed add in check to ensure no ids are the same
             # Display welcome message after first launch
             menu.ids.welcome_label.text = 'Welcome!'
-            # Write user_age to csv file
-            csvdir = App.get_running_app().csvdir
-
-            with open(os.path.join(csvdir, 'user_score.csv'), mode='a', newline='') as score_data:
-                writer = csv.writer(score_data)
-                writer.writerow(['picture_name','score','display_start_time','annotation_start_time','annotation_end_time','user_id','user_age','user_profession'])
-
+            # Write user_age to store file
+            
+            user_store.put('user',age=user_age,user_id=user_id,prof=user_profession)
         else:
             return
+
     def set_profession(self,prof):
         global user_profession
         print(user_profession)
@@ -293,23 +287,15 @@ class AnnotateScreen(Screen):
         # Create variable to store machine score of signals
         self.machine_score = float()
         # Add all pictures in the 'Images' folder to the pictures list
-        for filename in glob(join(curdir, 'images', '*')):
-            self.pictures.append(filename)
+        self.pictures = ['101386461387201568417948449838469701889_asym-fm4-SNR-12dB_1250_3750','102938605983409295714336240804183795512_asym-fm2-SNR-0dB_3750_6250','103816295986891413058595159792142688940_asym-fm4-SNR-9dB_1250_3750','108776939096942473457701722994053290920_asym-fm4-SNR-12dB_6250_8750','11190355415306468876267307038794198077_asym-fm2-SNR-0dB_6250_8750','112631446792391675623624266405087301257_sym-fm2-SNR-9dB_3750_6250','113169050665634613231662231387200902361_sym-fm4-SNR-12dB_11250_13750','113971189716700031972272563135840432490_asym-fm4-SNR-6dB_6250_8750','114295229073341578538208612948870791213_asym-fm4-SNR-10.8dB_8750_11250','114922679425879574442538237444906829067_asym-fm4-SNR-0dB_11250_13750','115591932089925178536835187296446557601_asym-fm8-SNR-12dB_6250_8750','116161180342623774946780928158175493539_asym-fm4-SNR-12dB_11250_13750','118983466657360622515101026895310397874_asym-fm8-SNR-10.8dB_6250_8750','121595226594098136474149918949526135801_sym-fm4-SNR-12dB_3750_6250','128629491853715749605091458845349750854_sym-fm8-SNR-0dB_1250_3750','129217223493224932089832292999237380479_sym-fm2-SNR-12dB_11250_13750','129378003887017676977129286937696449951_asym-fm8-SNR-6dB_1250_3750','131717182676443161919346140124486210686_sym-fm8-SNR-12dB_6250_8750','135060392315361915805751395548045555957_sym-fm8-SNR-9dB_1250_3750','137064368394167448591678663144012341960_sym-fm4-SNR-12dB_6250_8750','137534088669007762562064233190070619674_sym-fm2-SNR-9dB_11250_13750','140743128503468163728419614434881299683_asym-fm2-SNR-9dB_8750_11250','142861455629200504364333699238820556627_asym-fm4-SNR-6dB_3750_6250','144936506315656202252534609127463808837_sym-fm4-SNR-0dB_11250_13750','147500553718413805856487864810448164908_sym-fm4-SNR-10.8dB_8750_11250','148706759232151020354416952546074081764_asym-fm8-SNR-9dB_8750_11250','150758144868632234483354006658110036949_sym-fm2-SNR-0dB_3750_6250','15177562386238191467268415208819092786_asym-fm4-SNR-6dB_1250_3750','152608274903669601761234498173899050644_asym-fm2-SNR-0dB_11250_13750','153401866728622997936096297110757290529_asym-fm4-SNR-10.8dB_11250_13750','155685212051332572864542304109500151548_sym-fm2-SNR-10.8dB_3750_6250','161827464230079428733586488097250123430_asym-fm2-SNR-10.8dB_1250_3750','164146392652227406765514178873366319161_asym-fm2-SNR-6dB_11250_13750','165043755734495551219655443741956078580_sym-fm4-SNR-12dB_1250_3750','167177586571620980985453299404282972986_asym-fm8-SNR-0dB_8750_11250','168089579195138435052688436154129832211_asym-fm8-SNR-10.8dB_1250_3750','16831034799411185858109137353763718202_sym-fm2-SNR-12dB_6250_8750','174086245187058070728386544315753693360_sym-fm8-SNR-0dB_3750_6250','174442612141194238873224375686072419562_asym-fm2-SNR-12dB_3750_6250','178862807259226734486968335982766821380_asym-fm2-SNR-9dB_3750_6250','179097582148436985421847206656444753777_asym-fm2-SNR-12dB_6250_8750','179365326678401730378262172012142964146_asym-fm4-SNR-10.8dB_3750_6250','17970653058695003750701171635600902551_asym-fm2-SNR-12dB_8750_11250','18554525984262439217827847379010014678_sym-fm2-SNR-0dB_6250_8750','190538748886216715380758894987577840928_sym-fm2-SNR-12dB_3750_6250','195232381564377623846303997609484555481_asym-fm2-SNR-0dB_8750_11250','196244458685767216993035516791827997644_asym-fm4-SNR-12dB_3750_6250','197046228787377916164348867403985701017_sym-fm8-SNR-6dB_3750_6250','197250813900725360465554191657869366102_asym-fm2-SNR-6dB_6250_8750','201424563683795520236258902270817027515_asym-fm4-SNR-9dB_3750_6250','201990123428472189801470526514307057131_sym-fm8-SNR-10.8dB_8750_11250','203792090481212345706682633938796783716_asym-fm4-SNR-9dB_11250_13750','204169839598394360730323855403550584030_sym-fm2-SNR-6dB_3750_6250','208340137673882521745057930969422605866_asym-fm2-SNR-0dB_1250_3750','208665533463938898943277279255507733293_asym-fm8-SNR-6dB_8750_11250','209388692161082133116062067516565520379_asym-fm8-SNR-10.8dB_3750_6250','210517499175724485845063485745720567355_sym-fm8-SNR-9dB_6250_8750','211311811533823746569832323333983394123_sym-fm8-SNR-6dB_8750_11250','214431791759954348811102251522624471658_sym-fm4-SNR-10.8dB_3750_6250','215833854604085183509413457729854952659_asym-fm8-SNR-12dB_3750_6250','216553943101834912203429592758521415930_sym-fm8-SNR-6dB_1250_3750','217606020336159857142290641964680311438_asym-fm4-SNR-9dB_8750_11250','218741607921139413014089049480799482742_sym-fm8-SNR-10.8dB_1250_3750','218793349099064132547596572232364608806_sym-fm8-SNR-6dB_11250_13750','219377647686638954949726102254576896464_sym-fm2-SNR-10.8dB_6250_8750','224780392209592189838797211293355974937_sym-fm8-SNR-12dB_1250_3750','227297332295548973118163194292721297149_sym-fm2-SNR-9dB_8750_11250','227358437226967795548732473100741069538_asym-fm8-SNR-9dB_11250_13750','22799944593158886734478299836786325977_asym-fm2-SNR-9dB_11250_13750','229410803766004824323543852409436589729_asym-fm2-SNR-10.8dB_11250_13750','230053520329408203280581517417092858014_sym-fm4-SNR-10.8dB_6250_8750','233798913395705877385494458885112721394_asym-fm2-SNR-10.8dB_8750_11250','234107044838155133996957807863460752662_sym-fm4-SNR-6dB_11250_13750','235439208951830345038064020158797970900_asym-fm8-SNR-12dB_11250_13750','238194717427046012894871551420290810585_sym-fm8-SNR-10.8dB_11250_13750','238270624214895185434672909579560028906_sym-fm2-SNR-0dB_1250_3750','243150126816685476084582982324984804863_asym-fm2-SNR-12dB_1250_3750','244032791858590347318900594661238433126_asym-fm2-SNR-6dB_8750_11250','24551702020792147553494455150871964163_asym-fm4-SNR-6dB_11250_13750','248019142276737534499663732937639268401_asym-fm8-SNR-12dB_1250_3750','249090283157016850517218844005190750533_sym-fm8-SNR-10.8dB_6250_8750','25490271969167522298861352669658104078_sym-fm4-SNR-0dB_1250_3750','255281944759681247315729001597977207947_sym-fm4-SNR-6dB_3750_6250','255840436973285148963343401615933259977_sym-fm2-SNR-10.8dB_1250_3750','257850370336037221314121547158913364231_sym-fm8-SNR-12dB_8750_11250','260543695307689816698843264987496000153_sym-fm4-SNR-0dB_3750_6250','263984314890397401276084201215118984086_asym-fm2-SNR-9dB_6250_8750','266004240889837928985420339929521867707_sym-fm4-SNR-12dB_8750_11250','267214510130391298878708048182061005230_sym-fm8-SNR-9dB_3750_6250','269512822182309858202778522982212658349_sym-fm8-SNR-10.8dB_3750_6250','271269779920055217513661384700434954547_sym-fm4-SNR-9dB_11250_13750','275178104746213695279234605836108708664_sym-fm4-SNR-10.8dB_1250_3750','275783749893400817786102449654159494908_asym-fm2-SNR-10.8dB_6250_8750','281845356670920167685882519624066428796_sym-fm8-SNR-12dB_11250_13750','287231635215230665420862036228168339789_asym-fm2-SNR-6dB_1250_3750','287830477634105949273684035633459934561_asym-fm8-SNR-6dB_3750_6250','288935887971700623392624402463363859524_sym-fm8-SNR-0dB_8750_11250','299981712602357402250638997493512831300_sym-fm4-SNR-9dB_1250_3750','300011535376861068965933085425477761094_asym-fm8-SNR-0dB_3750_6250','300302427335487111527957651538039220359_asym-fm8-SNR-0dB_1250_3750','305283515332624891888467815234120670372_sym-fm2-SNR-9dB_1250_3750','308556835941084426696151343747383778285_asym-fm8-SNR-9dB_3750_6250','311065547437237803399992215698590841189_asym-fm2-SNR-12dB_11250_13750','312832972675604685998777227653051368364_sym-fm2-SNR-10.8dB_8750_11250','31374755318734456933707291388953182_asym-fm4-SNR-0dB_8750_11250','314424305351167864163554000133854041787_sym-fm4-SNR-9dB_6250_8750','320577711450055064122348748392472810130_sym-fm2-SNR-6dB_1250_3750','321097700614116151148055737762814959373_asym-fm4-SNR-10.8dB_1250_3750','323806809293356797219513001979645594778_sym-fm8-SNR-9dB_11250_13750','324367988954291176135924212933382671252_sym-fm4-SNR-0dB_8750_11250','328334031720832279403446472887676652040_asym-fm4-SNR-12dB_8750_11250','328946256682204348160171077638275463781_sym-fm4-SNR-6dB_1250_3750','329431773875248177102392064620740607625_asym-fm4-SNR-6dB_8750_11250','33163927502523146432765038182319156874_sym-fm8-SNR-0dB_11250_13750','334308056527180430351818366341737437655_asym-fm8-SNR-0dB_6250_8750','3621845667734640051200559466389021623_sym-fm8-SNR-6dB_6250_8750','36978958101474340128239670614220167766_sym-fm2-SNR-12dB_1250_3750','39976214882386914895408929216695239522_asym-fm8-SNR-12dB_8750_11250','41010419530641005163773837475294148617_sym-fm2-SNR-10.8dB_11250_13750','42157430995453535446284431401587749350_sym-fm2-SNR-6dB_8750_11250','44373663663760341525696535388811745687_asym-fm8-SNR-10.8dB_11250_13750','44785518456666472185283785554994819920_asym-fm8-SNR-10.8dB_8750_11250','45595830610051272980466381777522811893_asym-fm4-SNR-0dB_1250_3750','45830024586375341188001849789094979377_sym-fm2-SNR-9dB_6250_8750','45883942581810867500798451011016517254_sym-fm2-SNR-6dB_6250_8750','46703656826412496783344541681392500045_sym-fm4-SNR-0dB_6250_8750','49874626956555454365799307391437319555_sym-fm8-SNR-0dB_6250_8750','50569247416763755797235193773421667961_sym-fm2-SNR-0dB_11250_13750','52890446348324699772697011573897452064_sym-fm2-SNR-6dB_11250_13750','54745548622106086162577635509032801537_asym-fm2-SNR-10.8dB_3750_6250','56600895581208840834810581917736678039_asym-fm8-SNR-6dB_6250_8750','56756818909516704925197901476810371048_asym-fm4-SNR-0dB_6250_8750','57573432577498055313118095739005522466_asym-fm2-SNR-6dB_3750_6250','59936385657722380651909177446982791689_sym-fm4-SNR-6dB_6250_8750','603962197767583433347254667912023341_sym-fm8-SNR-12dB_3750_6250','60778443416566816526648989535845858130_sym-fm8-SNR-9dB_8750_11250','61871360200100626412411727402443661708_sym-fm4-SNR-9dB_3750_6250','64440115257179336188635426989947027393_sym-fm4-SNR-10.8dB_11250_13750','65304200756006426008864090709742145303_sym-fm4-SNR-6dB_8750_11250','65355551213441478948215956289617678711_sym-fm4-SNR-9dB_8750_11250','65406715677090344599506829607689885837_asym-fm4-SNR-0dB_3750_6250','75638105818974792311069590591285260634_sym-fm2-SNR-12dB_8750_11250','76211773845615802425220953159681086204_asym-fm2-SNR-9dB_1250_3750','7841340062079181374969621318617826311_asym-fm8-SNR-9dB_1250_3750','84535738702207038447888961300707200420_sym-fm2-SNR-0dB_8750_11250','9247235566151451320858828191280595929_asym-fm4-SNR-9dB_6250_8750','93253425297881063387330356425029220074_asym-fm8-SNR-0dB_11250_13750','93576762037668213048976794277950866483_asym-fm8-SNR-9dB_6250_8750','9391743859203713536498501981880577954_asym-fm8-SNR-6dB_11250_13750','98791882420541564542317388894776230098_asym-fm4-SNR-10.8dB_6250_8750']
+        
         # Remove any pictures that have already been annotated
-        csvdir = App.get_running_app().csvdir
-        with open(os.path.join(csvdir, 'user_score.csv'), mode='r') as score_data:
-            reader = csv.reader(score_data)
-            for row in reader:
-                # Get user's id
-                user_id = row[1]
-                # Get user's user_age
-                if row[5] != '':
-                    user_age = row[5]
-                for pic in self.pictures:
-                    if row[2] == Path(pic).name:
-                        self.pictures.remove(pic)
+        
+        for pic in self.pictures:
+            if picture_store.exists(pic):
+                self.pictures.remove(pic)
         # Get total number of pictures to gauge progress
-        self.prog_max = len([filename for filename in glob(join(curdir, 'images', '*'))])
+        self.prog_max = 150
         # Create progress bar widget
         self.ids.pb.max = self.prog_max
         # Set initial progress of progress bar
@@ -461,46 +447,8 @@ class AnnotateScreen(Screen):
         # # except requests.RequestException as err:
         #     # print("Error:", err)
 
+        picture_store.put(Path(self.current).name,score="{:0.2f}".format(score))
 
-        try:
-            # Write picture name and score to csv
-            csvdir = App.get_running_app().csvdir
-            with open(os.path.join(csvdir, 'user_score.csv'), mode='a', newline='') as score_data:
-                writer = csv.writer(score_data)
-                # TODO: Remove local csv
-                writer.writerow([
-                        Path(self.current).name,
-                        '{:0.2f}'.format(score),
-                        self.display_start_time.strftime('%M:%S.%f'),
-                        self.annotation_start_time.strftime('%M:%S.%f'),
-                        self.annotation_end_time.strftime('%M:%S.%f'),
-                        user_age,
-                        user_id,
-                        user_profession])
-                # requests.post('http://127.0.0.1:5000/upload?user=user123', json={
-                #     'user_id': user_id,
-                #     # 'user_level':   # Maybe use annotation for that
-                #     'display_start_time': self.display_start_time.isoformat(),
-                #     'annotation_start_time': self.annotation_start_time.isoformat(),
-                #     'annotation_end_time': self.annotation_end_time.isoformat(),
-                #     'picture_name': Path(self.current).name,
-                #     'score': score,
-                #     'ranking': self.ranking,
-                # })
-            # Find score assigned by machine learner
-            with open(join(curdir, 'csv', 'machine_score.csv'), mode='r') as machine:
-                reader = csv.reader(machine)
-                for row in reader:
-                    if row[0] == Path(self.current).name:
-                        if row[1] != '':
-                            self.machine_score = row[1]
-                        else:
-                            self.machine_score = ''
-        # Avoid app crashing from user touch on end screen
-        except AttributeError:
-            print(traceback.format_exc())
-            return
-        # If no pictures left call end screen
         if len(self.pictures) == 0:
             self.end_screen()
         # Ask user if they want to continue annotating after a certain amount of pictures
@@ -655,10 +603,25 @@ class TutorialScreen(Screen):
         self.prev_soln = []
         self.counter = 0
         self.tracker = 'signal'
-
+        tutorial_store.put('168089579195138435052688436154129832211_asym-fm8-SNR-10.8dB_1250_3750',score=0.4)
+        tutorial_store.put('174442612141194238873224375686072419562_asym-fm2-SNR-12dB_3750_6250',score=0.9)
+        tutorial_store.put('178862807259226734486968335982766821380_asym-fm2-SNR-9dB_3750_6250',score=0.8)
+        tutorial_store.put('179097582148436985421847206656444753777_asym-fm2-SNR-12dB_6250_8750',score=0.9)
+        tutorial_store.put('179365326678401730378262172012142964146_asym-fm4-SNR-10.8dB_3750_6250',score=0.6)
+        tutorial_store.put('195232381564377623846303997609484555481_asym-fm2-SNR-0dB_8750_11250',score=0.4)
+        tutorial_store.put('197250813900725360465554191657869366102_asym-fm2-SNR-6dB_6250_8750',score=0.4)
+        tutorial_store.put('201424563683795520236258902270817027515_asym-fm4-SNR-9dB_3750_6250',score=0.5)
+        tutorial_store.put('208340137673882521745057930969422605866_asym-fm2-SNR-0dB_1250_3750',score=0.5)
+        tutorial_store.put('208665533463938898943277279255507733293_asym-fm8-SNR-6dB_8750_11250',score=0.1)
+        tutorial_store.put('209388692161082133116062067516565520379_asym-fm8-SNR-10.8dB_3750_6250',score=0.3)
+        tutorial_store.put('215833854604085183509413457729854952659_asym-fm8-SNR-12dB_3750_6250',score=0.5)
+        tutorial_store.put('217606020336159857142290641964680311438_asym-fm4-SNR-9dB_8750_11250',score=0.4)
+        tutorial_store.put('227358437226967795548732473100741069538_asym-fm8-SNR-9dB_11250_13750',score=0.3)
+        tutorial_store.put('229410803766004824323543852409436589729_asym-fm2-SNR-10.8dB_11250_13750',score=0.8)
+        tutorial_store.put('233798913395705877385494458885112721394_asym-fm2-SNR-10.8dB_8750_11250',score=0.9)
+        tutorial_store.put('235439208951830345038064020158797970900_asym-fm8-SNR-12dB_11250_13750',score=0.4)
         # Add all pictures in tutorial folder to list
-        for filename in glob(join(curdir, 'tutorial', '*')):
-            self.pictures.append(filename)
+        self.pictures = ['168089579195138435052688436154129832211_asym-fm8-SNR-10.8dB_1250_3750','174442612141194238873224375686072419562_asym-fm2-SNR-12dB_3750_6250','178862807259226734486968335982766821380_asym-fm2-SNR-9dB_3750_6250','179097582148436985421847206656444753777_asym-fm2-SNR-12dB_6250_8750','179365326678401730378262172012142964146_asym-fm4-SNR-10.8dB_3750_6250','195232381564377623846303997609484555481_asym-fm2-SNR-0dB_8750_11250','197250813900725360465554191657869366102_asym-fm2-SNR-6dB_6250_8750','201424563683795520236258902270817027515_asym-fm4-SNR-9dB_3750_6250','208340137673882521745057930969422605866_asym-fm2-SNR-0dB_1250_3750','208665533463938898943277279255507733293_asym-fm8-SNR-6dB_8750_11250','209388692161082133116062067516565520379_asym-fm8-SNR-10.8dB_3750_6250','215833854604085183509413457729854952659_asym-fm8-SNR-12dB_3750_6250','217606020336159857142290641964680311438_asym-fm4-SNR-9dB_8750_11250','227358437226967795548732473100741069538_asym-fm8-SNR-9dB_11250_13750','229410803766004824323543852409436589729_asym-fm2-SNR-10.8dB_11250_13750','233798913395705877385494458885112721394_asym-fm2-SNR-10.8dB_8750_11250','235439208951830345038064020158797970900_asym-fm8-SNR-12dB_11250_13750']
         print(self.pictures)
         # Pull out all solution pictures into a separate list
         #for filename in glob(join(curdir, 'tutorial', '*_soln.png')):
@@ -673,15 +636,10 @@ class TutorialScreen(Screen):
 
         self.ids.display.source = self.current
         self.ids.pb.value = self.counter
+        print(self.current)
 
-        with open(join(curdir, 'csv','tutorial_score.csv'), mode='r') as machine:
-            reader = csv.reader(machine)
-            for row in reader:
-                if row[0] == Path(self.current).name:
-                    if row[1] != '':
-                        self.ids.hint_text.text = 'score: ~{}'.format(int(float(row[1])*100))
-                    else:
-                        self.ids.hint_text.text = ''
+        if tutorial_store.exists(self.current):
+            self.ids.hint_text.text = 'score: ~{}'.format(int(float(tutorial_store[self.current]['score'])*100))
 
 
     # Record initial down click coordinates
@@ -755,25 +713,9 @@ class TutorialScreen(Screen):
             self.coord.append(touch.y)
             #min_dist, dist, dx, dy = calculate_dist(*self.coord)
             self.score_val = touch.y / Window.height
-
-            with open(join(curdir, 'csv','tutorial_score.csv'), mode='r') as machine:
-                reader = csv.reader(machine)
-                for row in reader:
-                    print(Path(self.current).name)
-                    print(row[0])
-                    if row[0] == Path(self.current).name:
-                        if row[1] != '':
-                            self.machine_score = row[1]
-                            print(self.machine_score)
-                            print('Score_ found')
-                        else:
-                            self.machine_score = ''
-                            print('No Score :(')
-                            print(self.machine_score)
-
-
-            # Check if drag movement is big enough
-            #if dist > min_dist and dx > Window.width / 5:
+        
+            if tutorial_store.exists(self.current):
+                self.machine_score = tutorial_store[self.current]['score']
 
             self.tracker = 'soln'
             # Assign ranking based on comparison to machine learning score
@@ -790,7 +732,7 @@ class TutorialScreen(Screen):
                 self.ids.ranking.text = 'Not Quite'
 
             try:
-                self.prev_pictures.append(self.current)
+                self.prev_pictures.append(Path(self.current).name)
                 self.ids.float.remove_widget(self.ids.display)
                 self.ids.label.text = ''
                 self.ids.float.add_widget(self.ids.image, index=2)
@@ -940,18 +882,11 @@ class TutorialScreen(Screen):
             self.manager.current = 'tutorialend'
             self.manager.transition.direction = 'left'
             # Record if user has completed the tutorial
-            csvdir = App.get_running_app().csvdir
-            with open(os.path.join(csvdir, 'user_score.csv'), mode='r+', newline='') as score_data:
-                reader = csv.reader(score_data)
-                writer = csv.writer(score_data)
-                # Check if user has previously completed the tutorial
-                self.check = False
-                for row in reader:
-                    if row[0]== 'tutorial':
-                        self.check = True
-                # If first time completing tutorial, write in csv
-                if self.check == False:
-                    writer.writerow(['tutorial', user_id, '', 1, '', ''])
+            if user_store.exists('tutorial_done'):
+                self.check = True
+            else:
+                user_store.put('tutorial_done',value='True')
+
             # Recreate tutorial widget to allow for user to redo the tutorial if they want
             screen_manager.remove_widget(tutorial)
             tutorial = TutorialScreen()
@@ -967,16 +902,11 @@ class TutorialScreen(Screen):
             self.current = self.pictures.pop(0)
             self.ids.display.source = self.current
             self.ids.float.add_widget(self.ids.display, index=2)
-            print('called!!')
-            with open(join(curdir, 'csv','tutorial_score.csv'), mode='r') as machine:
-                reader = csv.reader(machine)
-                for row in reader:
-                    if row[0] == Path(self.current).name:
-                        if row[1] != '':
-                            self.ids.hint_text.text = 'score: ~{}'.format(int(float(row[1])*100))
-                        else:
-                            self.ids.hint_text.text = ''
-        
+
+            if tutorial_store.exists(self.current):
+                self.machine_score = tutorial_store[self.current]['score']
+                self.ids.hint_text.text = 'score: ~{}'.format(int(float(tutorial_store[self.current]['score'])*100))
+            
             # Remove next button
             self.ids.grid.add_widget(self.ids.empty)
             self.ids.grid.remove_widget(self.ids.next_button)
@@ -1139,10 +1069,10 @@ class SettingsScreen(Screen):
             # Reset welcome label on menu screen with new user_age
             menu.ids.welcome_label.text = 'Welcome ' + user_age +'!'
             # Write new user_age in user_scores.csv file
-            csvdir = App.get_running_app().csvdir
-            with open(os.path.join(csvdir, 'user_score.csv'), mode='a', newline='') as score_data:
-                writer = csv.writer(score_data)
-                writer.writerow(['picture_name','score','display_start_time','annotation_start_time','annotation_end_time','user_id','user_age','user_profession'])
+            #csvdir = App.get_running_app().csvdir
+            #with open(os.path.join(csvdir, 'user_score.csv'), mode='a', newline='') as score_data:
+            #    writer = csv.writer(score_data)
+            #    writer.writerow(['picture_name','score','display_start_time','annotation_start_time','annotation_end_time','user_id','user_age','user_profession'])
         else:
             return
 
@@ -1229,21 +1159,21 @@ def update_rankings():
     # Update continue trigger on settings screen
     settings.ids.cont_num.text = str(continue_trigger)
     # Read csv file
-    csvdir = App.get_running_app().csvdir
-    with open(os.path.join(csvdir, 'user_score.csv'), mode='r') as score_data:
-        reader = csv.reader(score_data)
-        time = []
-        for row in reader:
-            # Adds most recent scores to score dictionary from csv file
-            score_dict[row[2]] = (row[3], row[4])
-            # Adds dates to date dictionary
-            d = row[0].split()
-            if len(d) == 2:
-                date_tracker[d[0]] = d[1]
-                time.append(d[1])
-            # Check if user has completed tutorial
-            if row[0] == 'tutorial':
-                tutorial_check = True
+    # csvdir = App.get_running_app().csvdir
+    # with open(os.path.join(csvdir, 'user_score.csv'), mode='r') as score_data:
+    #     reader = csv.reader(score_data)
+    #     time = []
+    #     for row in reader:
+    #         # Adds most recent scores to score dictionary from csv file
+    #         score_dict[row[2]] = (row[3], row[4])
+    #         # Adds dates to date dictionary
+    #         d = row[0].split()
+    #         if len(d) == 2:
+    #             date_tracker[d[0]] = d[1]
+    #             time.append(d[1])
+    #         # Check if user has completed tutorial
+    #         if row[0] == 'tutorial':
+    #             tutorial_check = True
     for t in time:
         if float(t) > 0 and float(t) < 5:
             time_check = True
@@ -1327,27 +1257,27 @@ class ScorePicturesApp(App):
     def __init__(self):
         super().__init__()
 
-        if platform == 'android':
-            from android.permissions import request_permissions, check_permission, Permission
+        # if platform == 'android':
+        #     from android.permissions import request_permissions, check_permission, Permission
 
-            print('Getting permissions...')
-            permissions = [
-                Permission.WRITE_EXTERNAL_STORAGE,
-                Permission.READ_EXTERNAL_STORAGE,
-            ]
-            request_permissions(permissions)
+        #     print('Getting permissions...')
+        #     permissions = [
+        #         Permission.WRITE_EXTERNAL_STORAGE,
+        #         Permission.READ_EXTERNAL_STORAGE,
+        #     ]
+        #     request_permissions(permissions)
 
-            from android.storage import primary_external_storage_path
-            primary_ext_storage = primary_external_storage_path()
+        #     from android.storage import primary_external_storage_path
+        #     primary_ext_storage = primary_external_storage_path()
 
-            # Make sure user scores file exists
-            self.csvdir = os.path.join(primary_ext_storage, 'anno5i9')
-            Path(self.csvdir).mkdir(exist_ok=True)
-            user_score = Path(self.csvdir) / 'user_score.csv'
-            user_score.touch()
+        #     # Make sure user scores file exists
+        #     self.csvdir = os.path.join(primary_ext_storage, 'anno5i9')
+        #     Path(self.csvdir).mkdir(exist_ok=True)
+        #     user_score = Path(self.csvdir) / 'user_score.csv'
+        #     user_score.touch()
 
-        else:
-            self.csvdir = os.path.join(os.path.dirname(__file__), 'csv')
+        # else:
+        #     self.csvdir = os.path.join(os.path.dirname(__file__), 'csv')
 
         # TODO: Load user_age here if file exists, else create user_id here
 
