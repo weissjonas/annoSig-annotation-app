@@ -21,7 +21,7 @@
                     TextLabel:
                         text: 'The aim is to test whether it is possible\n to determine the signal quality of fetal ECG data\n by interviewing untrained individuals.'
                     TextLabel:
-                        text: 'This takes about 10 minutes. No personal data\n is collected in the study.\n If you have any questions or suggestions,\n please feel free to contact me.'
+                        text: 'This takes about 10 minutes. No personal data\n is collected in the study.\n You can interrupt the study at any time \n and continue later.'
                     TextLabel:
                         text: 'Thank you for your time,\n Jonas Weiß (jonas.weiss@tu-dresden.de)'
                     GridLayout:
@@ -101,9 +101,9 @@
             SwitchButton:
                 text: 'Start'
                 on_press: root.anno_screen()
-            SwitchButton:
-                text: 'User Profile'
-                on_press: root.user_screen()
+            #SwitchButton:
+            #    text: 'User Profile'
+            #    on_press: root.user_screen()
 
 <AnnotateScreen>:
     name: 'annotate'
@@ -136,6 +136,34 @@
             pos_hint: {'y': -0.48,'x': 0.48}
             color: (0, 0, 0, 1)
             text: '  0'
+
+
+        Label:
+            pos_hint: {'y': 0.384,'x': 0.43}
+            color: (0, 0, 0, 0.5)
+            text: 'clear fetal beats \n low noise'
+            font_size: Window.height/50
+        Label:
+            pos_hint: {'y': .192,'x': 0.43}
+            color: (0, 0, 0, 0.5)
+            text: 'clear fetal beats \n some noise'
+            font_size: Window.height/50
+        Label:
+            pos_hint: {'y': 0.0,'x': 0.43}
+            color: (0, 0, 0, 0.5)
+            text: 'fetal beats \n visible'
+            font_size: Window.height/50
+        Label:
+            pos_hint: {'y': -0.192,'x': 0.43}
+            color: (0, 0, 0, 0.5)
+            text: 'fetal beats \n hardly visible'
+            font_size: Window.height/50
+        Label:
+            pos_hint: {'y': -0.384,'x': 0.43}
+            color: (0, 0, 0, 0.5)
+            text: 'no fetal beats \n visible'
+            font_size: Window.height/50
+   
     BoxLayout:
         orientation: 'vertical'
         FloatLayout:
@@ -245,7 +273,7 @@
         orientation: 'vertical'
         padding: (20, 0)
         TextLabel:
-            text: 'Annotate the signal by swiping it to the right of the screen and assigning it a score'
+            text: 'Annotate by swiping to the right, or tipping'
             text_size: (1000, None)
             size_x: Window.width
             size_hint: (1, 0.2)
@@ -287,7 +315,7 @@
         orientation: 'vertical'
         padding: (20, 0)
         TextLabel:
-            text: 'The fetal heartbeats appear in between the maternal beats'
+            text: 'Assess the quality of fetal heartbeats!'#'The fetal heartbeats are in between the maternal beats'
             text_size: (1000, None)
             size_x: Window.width
             size_hint: (1, 0.2)
@@ -376,7 +404,8 @@
         Label:
             id: hint_text
             pos_hint: {'y': -0.4,'x': -0.35}
-            color: (0, 0, 0, 1)
+            # no hint text
+            color: (0, 0, 0, 0)
         Label:
             pos_hint: {'y': 0.48,'x': 0.48}
             color: (0, 0, 0, 1)
@@ -401,6 +430,33 @@
             pos_hint: {'y': -0.48,'x': 0.48}
             color: (0, 0, 0, 1)
             text: '  0'
+
+        Label:
+            pos_hint: {'y': 0.384,'x': 0.43}
+            color: (0, 0, 0, 0.5)
+            text: 'clear fetal beats \n low noise'
+            font_size: Window.height/50
+        Label:
+            pos_hint: {'y': .192,'x': 0.43}
+            color: (0, 0, 0, 0.5)
+            text: 'clear fetal beats \n some noise'
+            font_size: Window.height/50
+        Label:
+            pos_hint: {'y': 0.0,'x': 0.43}
+            color: (0, 0, 0, 0.5)
+            text: 'fetal beats \n visible'
+            font_size: Window.height/50
+        Label:
+            pos_hint: {'y': -0.192,'x': 0.43}
+            color: (0, 0, 0, 0.5)
+            text: 'fetal beats \n hardly visible'
+            font_size: Window.height/50
+        Label:
+            pos_hint: {'y': -0.384,'x': 0.43}
+            color: (0, 0, 0, 0.5)
+            text: 'no fetal beats \n visible'
+            font_size: Window.height/50
+   
     BoxLayout:
         orientation: 'vertical'
         FloatLayout:
