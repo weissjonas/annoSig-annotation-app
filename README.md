@@ -7,6 +7,7 @@ It is based on pictures so its highly adjustable.
 
 The App was part of a Crowdsourcing approach of fetal ECG Signal Quality - therfore a simple server is needed to handel the requests.
 
+[![DOI](https://zenodo.org/badge/188379295.svg)](https://zenodo.org/badge/latestdoi/188379295)
 
 ## Installation
 
